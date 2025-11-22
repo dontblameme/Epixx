@@ -1,0 +1,64 @@
+﻿@model List<Epixx.Models.Pallet>
+
+<div class="inbound-container">
+    <div class="top-section">
+
+        <div class="start-section">
+            <label class="title">Inleverans</label>
+
+            <div class="button-row">
+                <a href="/Warehouse/StoreInboundShipment" id="start-button" class="btn btn-success custom-btn">
+                    Starta
+                </a>
+
+                <a href="#" id="cancel-button" class="btn btn-secondary cancel-btn">
+                    Avbryt runda
+                </a>
+            </div>
+        </div>
+
+        <div class="container-top">
+            <div class="forms">
+                <div class="form-group">
+                    <input class="pallet-barcode-input" type="text" autofocus />
+                    <button type="button" class="delete-pallet-button d-none">
+                        <i style="font-size: 30px;" class="bi bi-trash"></i>
+                    </button>
+                </div>
+                <div class="form-group d-none">
+                    <input disabled class="pallet-barcode-input" type="text" />
+                    <button disabled type="button" class="delete-pallet-button">
+                        <i style="font-size: 30px;" class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="selected-list-container">
+                <ol class="ps-3 selected-list">
+                    <li class="py-1 d-none"></li>
+                </ol>
+            </div>
+        </div>
+
+
+    </div>
+
+    <div class="bottom-section">
+        <button id="toggle-table-info" class="toggle-btn">Visa Inkommande Pallar</button>
+
+        <div class="table-wrapper">
+            <table class="pallet-table">
+                <thead>
+                    <tr>
+                        <th>Steckkod</th>
+                        <th>Beskrivning</th>
+                        <th>Höjd (cm)</th>
+                    </tr>
+                </thead>
+                <tbody id="palletsBody">
+                    @await Html.PartialAsync("_PalletTable", Model)
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

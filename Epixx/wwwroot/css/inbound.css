@@ -1,0 +1,66 @@
+﻿.store-inboundshipment-container {
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 20px;
+    color: #333;
+}
+
+.choosen {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+}
+.cancel-buttons{
+    display: flex;
+    justify-content: space-between;
+}
+.choosen label {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.choosen input {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+hr {
+    margin: 30px 0;
+    border: none;
+    border-top: 1px solid #eee;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+thead {
+    background: #f7f7f7;
+}
+
+th, td {
+    text-align: left;
+    padding: 12px 10px;
+}
+
+/*tbody tr:nth-child(even) {
+    background: #fafafa;
+}*/
+
+tbody tr:hover {
+    background: #f0f0f0;
+}
+.selected {
+    background-color: deepskyblue;
+    font-weight: bold;
+    border-left: 4px solid #1890ff;
+}

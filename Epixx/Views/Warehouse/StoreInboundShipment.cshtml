@@ -1,0 +1,55 @@
+﻿@{
+    @model List<Epixx.Models.PalletWithFullLocationVM>
+    var firstPallet = Model.FirstOrDefault();
+}
+<div class="store-inboundshipment-container">
+    <div class="choosen">
+        <label>Skanna en av Pallarna</label>
+        <input name="Barcode" id="barcode" type="text" autofocus placeholder="@firstPallet.Pallet.Barcode" />
+
+        <label>Skanna Pallplatsen</label>
+        <input name="Location" id="location" disabled type="text" />
+    </div>
+    <div class="cancel-buttons">
+        <a href="#" id="cancel-button-for-storing" class="btn btn-secondary cancel-btn">
+            Avbryt runda
+        </a>
+        <a href="#" id="back-to-menu-button" class="btn btn-secondary cancel-btn">
+            Tillbaka till meny
+        </a>
+    </div>
+    <div>
+        <hr>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Nummer</th>
+                    <th>Beskrivning</th>
+                    <th>Plats</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @{
+                    bool isFirst = true;
+                }
+                @foreach (var p in Model)
+                {
+                    <tr class="@(isFirst ? "selected" : "")">
+                        <td class="barcode-list-item">@p.Pallet.Barcode</td>
+                        <td class="description-list-item">
+                            @(p.Pallet.Description.Length > 30
+                                                    ? p.Pallet.Description.Substring(0, 30) + "..."
+                                                    : p.Pallet.Description)
+                        </td>
+                        <td class="location-list-item">@p.FullLocation</td>
+                    </tr>
+
+                    isFirst = false;
+                }
+            </tbody>
+
+        </table>
+    </div>
+</div>
