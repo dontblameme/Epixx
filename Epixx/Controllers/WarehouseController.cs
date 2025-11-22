@@ -19,9 +19,9 @@ namespace Epixx.Controllers
         [HttpPost]
         public IActionResult StoreInboundShipment([FromBody] string storedpalletbarcode)
         {
-            var pallet = _palletstorageservice._driver.pallets.FirstOrDefault(p => p.Pallet.Barcode == long.Parse(storedpalletbarcode));
+            var pallet = _palletstorageservice._driver.pallets.FirstOrDefault(p => p.Barcode == long.Parse(storedpalletbarcode));
             _palletstorageservice.PlacePalletInWarehouse(pallet);
-            _shipmentservice.RemovePallet(pallet.Pallet);
+            _shipmentservice.RemovePallet(pallet);
             _palletstorageservice._driver.pallets.Remove(pallet);
             return Json(_palletstorageservice._driver.pallets);
         }
@@ -44,7 +44,7 @@ namespace Epixx.Controllers
         [HttpPost]
         public void RemovePalletFromQueueByBarcode([FromBody] string barcode)
         {
-            var pallet = _palletstorageservice._driver.pallets.FirstOrDefault(p => p.Pallet.Barcode == long.Parse(barcode));
+            var pallet = _palletstorageservice._driver.pallets.FirstOrDefault(p => p.Barcode == long.Parse(barcode));
             if (pallet == null) return;
             _palletstorageservice.RemovePalletSpotFromLocation(pallet);
         }
@@ -60,10 +60,11 @@ namespace Epixx.Controllers
             if (pallet == null)
                 return Json(null);
             string location = _palletstorageservice.FindPalletSpotLocation(pallet);
-            PalletWithFullLocationVM palletWithFullName = new PalletWithFullLocationVM();
-            palletWithFullName.Pallet = pallet;
-            palletWithFullName.FullLocation = location;
-            return Json(palletWithFullName);
+            Pallet palletwithlocation = new Pallet();
+            palletwithlocation = pallet;
+            palletwithlocation.Location = location;
+
+            return Json(palletwithlocation);
         }
         public IActionResult AutoSkj()
         {

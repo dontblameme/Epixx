@@ -110,16 +110,17 @@
 
             const result = await refreshSelectedList(barcode);
             if (result === null) return;
-            selectedPallets.set(result.pallet.barcode, {
-                location: result.fullLocation,
-                height: result.pallet.height
+            console.log(result.location);
+            selectedPallets.set(result.barcode, {
+                location: result.location,
+                height: result.height
             });
-            let palletStatus = checkTwoTenStatusSingleCase(result.pallet.height);
+            let palletStatus = checkTwoTenStatusSingleCase(result.height);
             if (!palletStatus) {
                
                 input.disabled = true;
                 updateSelectedUI();
-                if (result.pallet.height != 210) {
+                if (result.height != 210) {
                     createFormGroup();
                 }
 

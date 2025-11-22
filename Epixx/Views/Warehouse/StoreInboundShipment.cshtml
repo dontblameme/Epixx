@@ -1,11 +1,11 @@
 ﻿@{
-    @model List<Epixx.Models.PalletWithFullLocationVM>
+    @model List<Epixx.Models.Pallet>
     var firstPallet = Model.FirstOrDefault();
 }
 <div class="store-inboundshipment-container">
     <div class="choosen">
         <label>Skanna en av Pallarna</label>
-        <input name="Barcode" id="barcode" type="text" autofocus placeholder="@firstPallet.Pallet.Barcode" />
+        <input name="Barcode" id="barcode" type="text" autofocus placeholder="@firstPallet.Barcode" />
 
         <label>Skanna Pallplatsen</label>
         <input name="Location" id="location" disabled type="text" />
@@ -37,13 +37,13 @@
                 @foreach (var p in Model)
                 {
                     <tr class="@(isFirst ? "selected" : "")">
-                        <td class="barcode-list-item">@p.Pallet.Barcode</td>
+                        <td class="barcode-list-item">@p.Barcode</td>
                         <td class="description-list-item">
-                            @(p.Pallet.Description.Length > 30
-                                                    ? p.Pallet.Description.Substring(0, 30) + "..."
-                                                    : p.Pallet.Description)
+                            @(p.Description.Length > 30
+                                                    ? p.Description.Substring(0, 30) + "..."
+                                                    : p.Description)
                         </td>
-                        <td class="location-list-item">@p.FullLocation</td>
+                        <td class="location-list-item">@p.Location</td>
                     </tr>
 
                     isFirst = false;

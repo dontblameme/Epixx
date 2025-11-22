@@ -13,22 +13,21 @@ namespace Epixx.Services
             _warehouseservice = warehouse;
             _driver = driver;
         }
-        public void RemovePalletSpotFromLocation(PalletWithFullLocationVM pallet)
+        public void RemovePalletSpotFromLocation(Pallet pallet)
         {            
             _driver.pallets.Remove(pallet);            
         }
-        public void PlacePalletInWarehouse(PalletWithFullLocationVM pallet)
+        public void PlacePalletInWarehouse(Pallet pallet)
         {
-            var row = pallet.FullLocation.Remove(2);
-            var location = pallet.FullLocation.Remove(0, 2);
+            var row = pallet.Location.Remove(2);
             foreach (Row r in _warehouseservice.Warehouse)
             {
-                if (r.Name == row)
+                foreach(var palletspot in r.PalletSpots)
                 {
-                    foreach (var palletspot in r.PalletSpots)
+                    if(palletspot.Location == pallet.Location)
                     {
-                        palletspot.CurrentPallet = pallet.Pallet;
-                        palletspot.CurrentPallet.Location = "Stored";
+                        palletspot.CurrentPallet = pallet;
+                        Console.WriteLine("Pallet successfully added to the warehouse: " + palletspot.CurrentPallet.Location);
                     }
                 }
             }
@@ -39,17 +38,11 @@ namespace Epixx.Services
             {
                 foreach (var palletspot in row.PalletSpots)
                 {
-                    string name = row.Name.Remove(2, 1);
                     string location = palletspot.Location;
-                    string fulllocation = name + location;
-                    if (palletspot.CurrentPallet == null && palletspot.Height > pallet.Height && location[location.Length - 1] != '1' && !_driver.pallets.Any(p => p.FullLocation == fulllocation))
-                    {                       
-                        PalletWithFullLocationVM palletWithFullName = new PalletWithFullLocationVM();
-                        palletWithFullName.Pallet = pallet;
-                        palletWithFullName.FullLocation = name + palletspot.Location;
-                        _driver.pallets.Add(palletWithFullName);
-                        return palletWithFullName.FullLocation;
-                         
+                    if (palletspot.CurrentPallet == null && palletspot.Height > pallet.Height && location[location.Length - 1] != '1' && !_driver.pallets.Any(p => p.Location == palletspot.Location))
+                    {                                
+                        _driver.pallets.Add(pallet);
+                        return palletspot.Location;
                     }
                 }
             }

@@ -34,7 +34,9 @@ namespace Epixx.Services
                         for(int k = 0; k < heights.Count; k++)
                         {
                             string location = spotconfig[i].Name.Contains('1') ? (255 - spotconfig[i].Spots) + j + 1 + " " + heights[k].ColNumber : (555 - spotconfig[i].Spots) + j + 1 + " " + heights[k].ColNumber;
-                            rows[i].PalletSpots.Add(new PalletSpot { Height = heights[k].height, Location = location});
+                            string rowname = rows[i].Name.Remove(2, 1);
+                            Console.WriteLine(rowname + " " + location);
+                            rows[i].PalletSpots.Add(new PalletSpot { Height = heights[k].height, Location = rowname + " " + location});
                         }
 
                     }
