@@ -1,53 +1,107 @@
-﻿using Epixx.Models;
-
+﻿using Epixx.Data;
+using Epixx.Models;
+using Microsoft.EntityFrameworkCore;
 namespace Epixx.Services
 {
     public class PalletStorageService
     {
         private readonly WarehouseService _warehouseservice;
-        private readonly InboundShipmentService _inboundShipmentService;
-        public Driver _driver {  get; set; }
-        public PalletStorageService(InboundShipmentService inboundShipmentService ,WarehouseService warehouse, Driver driver) 
+        private readonly InboundShipmentService _inboundshipmentservice;
+        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly DriverService _driver;
+        public PalletStorageService(InboundShipmentService inboundShipmentService ,WarehouseService warehouse, DriverService driver, IServiceScopeFactory scope) 
         {
-            _inboundShipmentService = inboundShipmentService;
+            _inboundshipmentservice = inboundShipmentService;
             _warehouseservice = warehouse;
             _driver = driver;
+            _scopeFactory = scope;
         }
-        public void RemovePalletSpotFromLocation(Pallet pallet)
-        {            
-            _driver.pallets.Remove(pallet);            
-        }
-        public void PlacePalletInWarehouse(Pallet pallet)
+        public async Task PlacePalletInWarehouseAsync(int palletId, string location)
         {
-            var row = pallet.Location.Remove(2);
-            foreach (Row r in _warehouseservice.Warehouse)
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            // Fetch the pallet
+            var pallet = await db.Pallets.SingleOrDefaultAsync(p => p.Id == palletId);
+            // Fetch the target spot including any current pallet
+            var spot = await db.PalletSpots
+                               .Include(sp => sp.CurrentPallet)
+                               .SingleOrDefaultAsync(sp => sp.Location == location);
+
+            // Detach pallet from any previous spot
+            var oldSpot = await db.PalletSpots.SingleOrDefaultAsync(s => s.CurrentPalletId == pallet.Id);
+            if (oldSpot != null)
             {
-                foreach(var palletspot in r.PalletSpots)
-                {
-                    if(palletspot.Location == pallet.Location)
-                    {
-                        palletspot.CurrentPallet = pallet;
-                        Console.WriteLine("Pallet successfully added to the warehouse: " + palletspot.CurrentPallet.Location);
-                    }
-                }
+                oldSpot.CurrentPalletId = null;
+                oldSpot.CurrentPallet = null;
+            }
+
+            // Assign pallet to the spot
+            spot.CurrentPalletId = pallet.Id;
+            spot.CurrentPallet = pallet;
+
+            // Update pallet status
+            pallet.Status = "Stored";
+
+            // Save changes in a transaction to ensure consistency
+            using var transaction = await db.Database.BeginTransactionAsync();
+            try
+            {
+                await db.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
             }
         }
+
+
+
+
+
+
+
         public string FindPalletSpotLocation(Pallet pallet)
         {
-            foreach (var row in _warehouseservice.Warehouse)
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            var username = _driver.GetCurrentDriverName();
+            var driver = db.Drivers
+                .Include(d => d.pallets)
+                .FirstOrDefault(d => d.Name == username);
+
+            // Fetch all valid candidate spots
+            var spots = db.PalletSpots
+                .Include(s => s.CurrentPallet)
+                .Where(s => s.Height >= pallet.Height) // height requirement
+                .ToList();
+
+            foreach (var spot in spots)
             {
-                foreach (var palletspot in row.PalletSpots)
-                {
-                    string location = palletspot.Location;
-                    if (palletspot.CurrentPallet == null && palletspot.Height > pallet.Height && location[location.Length - 1] != '1' && !_driver.pallets.Any(p => p.Location == palletspot.Location))
-                    {                                
-                        _driver.pallets.Add(pallet);
-                        return palletspot.Location;
-                    }
-                }
+                // spot is occupied?
+                if (spot.CurrentPallet != null)
+                    continue;
+
+                // spot location ending with '1'?
+                if (spot.Location[^1] == '1')
+                    continue;
+
+                // driver has another pallet assigned here?
+                if (driver.pallets.Any(p => p.Location == spot.Location))
+                    continue;
+
+                // another pallet already has this location?
+                if (db.Pallets.Any(p => p.Location == spot.Location && p.Id != pallet.Id))
+                    continue;
+
+                return spot.Location;
             }
-            
+
             return "Ingen plats hittades";
         }
+
     }
 }

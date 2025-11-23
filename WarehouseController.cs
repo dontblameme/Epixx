@@ -1,4 +1,5 @@
-﻿using Epixx.Models;
+csharp Epixx\Controllers\WarehouseController.cs
+using Epixx.Models;
 using Epixx.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
@@ -23,39 +24,23 @@ namespace Epixx.Controllers
         public IActionResult StoreInboundShipment([FromBody] string storedpalletbarcode)
         {
             var pallet = _driverservice.FetchSpecificPalletByBarcode(storedpalletbarcode);
-            if(pallet == null)
-                return Json(null);
-            _palletstorageservice.PlacePalletInWarehouseAsync(pallet.Id, pallet.Location);
+            _palletstorageservice.PlacePalletInWarehouse(pallet);
             _driverservice.RemovePalletFromDriver(pallet);
 
             var result = _driverservice.FetchAllPalletsFromDriver();
-            List<PalletDTO> palletDTOs = new List<PalletDTO>();
-            foreach (var p in result)
+            return new JsonResult(result)
             {
-                palletDTOs.Add(new PalletDTO
+                SerializerOptions = new JsonSerializerOptions
                 {
-                    Barcode = p.Barcode,
-                    Description = p.Description,
-                    Location = p.Location 
-                });
-            }
-            return Json(palletDTOs);
+                    ReferenceHandler = ReferenceHandler.IgnoreCycles
+                }
+            };
         }
         [HttpGet]
         public IActionResult StoreInboundShipment()
         {
-            List<PalletDTO> palletDTOs = new List<PalletDTO>();
             var pallets = _driverservice.FetchAllPalletsFromDriver();
-            foreach(var pallet in pallets)
-            {
-                palletDTOs.Add(new PalletDTO
-                {
-                    Barcode = pallet.Barcode,
-                    Description = pallet.Description,
-                    Location = pallet.Location
-                });
-            }
-            return View(palletDTOs);
+            return View(pallets);
         }
         public IActionResult _PalletTable()
         {
@@ -84,16 +69,18 @@ namespace Epixx.Controllers
             if (pallet == null)
                 return Json(null);
             string location = _palletstorageservice.FindPalletSpotLocation(pallet);
-            pallet.Location = location;
-            PalletDTO palletDTO = new PalletDTO();
-            palletDTO.Barcode = pallet.Barcode;
-            palletDTO.Description = pallet.Description;
-            palletDTO.Location = location;
-            palletDTO.Height = pallet.Height;
-            _driverservice.AddPalletToDriver(pallet);
+            Pallet palletwithlocation = new Pallet();
+            palletwithlocation = pallet;
+            palletwithlocation.Location = location;
+            _driverservice.AddPalletToDriver(palletwithlocation);
 
-
-            return Json(palletDTO);
+            return new JsonResult(palletwithlocation)
+            {
+                SerializerOptions = new JsonSerializerOptions
+                {
+                    ReferenceHandler = ReferenceHandler.IgnoreCycles
+                }
+            };
         }
         public IActionResult AutoSkj()
         {

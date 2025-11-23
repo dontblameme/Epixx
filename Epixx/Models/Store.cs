@@ -1,9 +1,16 @@
-﻿namespace Epixx.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Epixx.Models
 {
     public class Store
     {
+        public int Id { get; set; }
+        [Required]
         public string Name { get; set; } = "Falköping"; //Store name
-        public int Capacity { get; set; } = Random.Shared.Next(50, 101); //random number between 50-100
+        [Required]
+        public int Capacity { get; set; } //How many pallets it can store before departure
+        [Required]
+        public int Code { get; set; } //koden föraren måste ange för att placera pallen
         public List<Pallet>? Pallets { get; set; }
     }
 }

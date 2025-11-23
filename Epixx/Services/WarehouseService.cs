@@ -35,7 +35,6 @@ namespace Epixx.Services
                         {
                             string location = spotconfig[i].Name.Contains('1') ? (255 - spotconfig[i].Spots) + j + 1 + " " + heights[k].ColNumber : (555 - spotconfig[i].Spots) + j + 1 + " " + heights[k].ColNumber;
                             string rowname = rows[i].Name.Remove(2, 1);
-                            Console.WriteLine(rowname + " " + location);
                             rows[i].PalletSpots.Add(new PalletSpot { Height = heights[k].height, Location = rowname + " " + location});
                         }
 

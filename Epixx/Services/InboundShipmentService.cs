@@ -1,93 +1,137 @@
-﻿using Epixx.Models;
-using Microsoft.AspNetCore.Components.Routing;
-using System.Reflection.Metadata.Ecma335;
+﻿using Epixx.Data;
+using Epixx.Models;
+using Microsoft.EntityFrameworkCore;
 
-namespace Epixx.Services
+public class InboundShipmentService : BackgroundService
 {
-    public class InboundShipmentService : BackgroundService
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly Random _rnd = new Random();
+
+    public InboundShipmentService(IServiceScopeFactory scopeFactory)
     {
-        private Random _rnd = new Random();
-        private List<Pallet> pallets = new List<Pallet>();
-        public List<Pallet> GetPallets()
+        _scopeFactory = scopeFactory;
+    }
+    public List<Pallet> GetPallets()
+    {
+        using (var scope = _scopeFactory.CreateScope())
         {
-            return pallets; 
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var pallets = db.Pallets.Where(p => p.Status == "Awaiting Storage").ToList();
+            return pallets;
         }
-        public void RemovePallet(Pallet pallet)
+    }
+    public void RemovePallet(Pallet pallet)
+    {
+        using (var scope = _scopeFactory.CreateScope())
         {
-            pallets.Remove(pallet);
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Pallets.Remove(pallet);
+            db.SaveChanges();
         }
-        private void CreateNewPallets()
+    }
+    private List<PalletType> createDummyPalletTypes()
+    {
+        List<PalletType> palletTypes = new();
+        palletTypes.Add(new PalletType
         {
-            int random = _rnd.Next(1, 6);
+            Description = "Vinterkängor 42",
+            Height = 130,
+            Amount = 55,
+          
+        });
+        palletTypes.Add(new PalletType
+        {
+            Description = "Naturtrogen julgran 210 cm",
+            Height = 150,
+            Amount = 21,
+
+        });
+        palletTypes.Add(new PalletType
+        {
+            Description = "Julgranskrage Ø50/70 cm",
+            Height = 130,
+            Amount = 40,
+
+        });
+        palletTypes.Add(new PalletType
+        {
+            Description = "Julgranskrage Ø50/70 cm",
+            Height = 130,
+            Amount = 40,
+
+        });
+        palletTypes.Add(new PalletType
+        {
+            Description = "Julgransfot för konstgran",
+            Height = 150,
+            Amount = 20,
+
+        });
+        palletTypes.Add(new PalletType
+        {
+            Description = "Pilejacka herr",
+            Height = 150,
+            Amount = 200
+        });
+        palletTypes.Add(new PalletType
+        {
+
+            Description = "MIG-svets 100 A",
+            Height = 210,
+            Amount = 2
+        });
+        return palletTypes;
+    }
+    private List<Pallet> CreateNewPallets(PalletType pallettype)
+    {
+        List<Pallet> pallets = new();
+        int count = _rnd.Next(2, 15);
+        for(int i = 0; i < count; i++)
+        {
             Pallet pallet = new Pallet();
-            switch (random)
-            {
-                case 1:
-                    
-                    pallet.Description = "Arbetsstrumpor 3 par";
-                    pallet.Height = 130;
-                    pallet.Amount = 250;
-                    pallet.Status = "Awaiting Storage";
-                    break;
-                case 2:
+            pallet.Barcode = _rnd.Next(10000000, 999999999);
+            pallet.Status = "Awaiting Storage";
+            pallet.Description = pallettype.Description;
+            pallet.Amount = pallettype.Amount;
+            pallet.Height = pallettype.Height;
+            pallets.Add(pallet);
+           
 
-                    pallet.Description = "Badrumsvärmare 2000 W 230 V";
-                    pallet.Height = 210;
-                    pallet.Amount = 5;
-                    pallet.Status = "Awaiting Storage";
-                    break;
-                case 3:
-
-                    pallet.Description = "Domkraft med aluminiumchassi 1,5 t 90-360 mm";
-                    pallet.Height = 150;
-                    pallet.Amount = 4;
-                    pallet.Status = "Awaiting Storage";
-                    break;
-                case 4:
-
-                    pallet.Description = "Batteridriven mutterdragare 900 Nm 18 V";
-                    pallet.Height = 210;
-                    pallet.Amount = 30;
-                    pallet.Status = "Awaiting Storage";
-                    break;
-                case 5:
-
-                    pallet.Description = "Kompressor 24 l 1000 W";
-                    pallet.Height = 150;
-                    pallet.Amount = 4;
-                    pallet.Status = "Awaiting Storage";
-                    break;
-            }
-            int noofpallets = _rnd.Next(1, 6);
-            //Adding X amount of the same pallet
-            for(int i = 0; i < noofpallets; i++)
-            {
-                Pallet p = new Pallet
-                {
-                    PalletID = _rnd.Next(10000000, 999999999),
-                    Barcode = _rnd.Next(10000000, 999999999),
-                    Description = pallet.Description,
-                    Height = pallet.Height,
-                    Amount = pallet.Amount,
-                    Status = pallet.Status,
-                };
-                pallets.Add(p);
-            }
         }
-
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        return pallets;
+    }
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        // One-time DB access before the loop
+        using (var scope = _scopeFactory.CreateScope())
         {
-
-            // This loop runs in the background
-            while (!stoppingToken.IsCancellationRequested)
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            if (!db.PalletTypes.Any())
             {
-                if (pallets.Count < 50)
-                {
-                    CreateNewPallets();
-                }
-                    
-                await Task.Delay(1000, stoppingToken); // wait 3 seconds
+                // populate initial dummy data
+                db.AddRange(createDummyPalletTypes());
+                await db.SaveChangesAsync(stoppingToken);
             }
         }
+
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            int countTypes = await db.PalletTypes.CountAsync();
+            int index = _rnd.Next(countTypes);
+            int count = await db.Pallets.CountAsync();
+            //Get a random pallet type from db
+            var randompalletType = await db.PalletTypes.Skip(index).FirstOrDefaultAsync(); 
+            if(count < 50)
+            {
+                var newpallets = CreateNewPallets(randompalletType);
+                db.Pallets.AddRange(newpallets);
+                await db.SaveChangesAsync(stoppingToken);
+            }
+            // periodic work
+            await Task.Delay(30000, stoppingToken);
+        }
+
     }
 }

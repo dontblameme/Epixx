@@ -7,6 +7,13 @@ namespace Epixx.Controllers
 {
     public class HomeController : Controller
     {
+        private readonly DriverService _driverservice;
+        private readonly WarehouseService _warehouse;
+        public HomeController(DriverService service, WarehouseService warehouse)
+        {
+            _warehouse = warehouse;
+            _driverservice = service;
+        }
         [HttpGet]
         public IActionResult Login()
         {
@@ -18,7 +25,9 @@ namespace Epixx.Controllers
 
             if(username == "admin" && password == "1234")
             {
-                HttpContext.Session.SetString("User", "isLoggedIn");
+                string name = _driverservice.GetOrCreateDriver("Steven");
+                HttpContext.Session.SetString("User", name);
+
                 return RedirectToAction("Index", "Home");
             }
             return View();
@@ -28,7 +37,6 @@ namespace Epixx.Controllers
             var user = HttpContext.Session.GetString("User");
             if (string.IsNullOrEmpty(user))
                 return RedirectToAction("Login", "Home");
-            WarehouseService service = new WarehouseService();
             return View();
         }
 

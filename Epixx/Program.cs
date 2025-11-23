@@ -1,39 +1,51 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Epixx.Services;
+using Epixx.Data;
 using Epixx.Models;
+using Epixx.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession();
-builder.Services.AddSingleton<PalletStorageService>();
-builder.Services.AddSingleton<Driver>();
-builder.Services.AddSingleton<InboundShipmentService>();
-builder.Services.AddHostedService(sp => sp.GetRequiredService<InboundShipmentService>());
+
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddSingleton<WarehouseService>();
+
+builder.Services.AddSingleton<DriverService>();
+builder.Services.AddSingleton<PalletStorageService>();
+builder.Services.AddSingleton<InboundShipmentService>();
+
+builder.Services.AddHostedService(sp => sp.GetRequiredService<InboundShipmentService>());
+
 var app = builder.Build();
 
-
-
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+using (var scope = app.Services.CreateScope())
 {
-    app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var warehouseservice = scope.ServiceProvider.GetRequiredService<WarehouseService>();
+
+    db.Database.Migrate();
+
+    if (!db.Rows.Any())
+    {
+        var rows = warehouseservice.Warehouse;
+        db.Rows.AddRange(rows);
+        db.SaveChanges();
+    }
 }
 
+app.UseSession();
+app.UseStaticFiles();
 app.UseHttpsRedirection();
 app.UseRouting();
-app.UseSession();
 app.UseAuthorization();
-
-app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
-
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();

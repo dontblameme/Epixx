@@ -110,7 +110,6 @@
 
             const result = await refreshSelectedList(barcode);
             if (result === null) return;
-            console.log(result.location);
             selectedPallets.set(result.barcode, {
                 location: result.location,
                 height: result.height
