@@ -16,6 +16,28 @@ namespace Epixx.Services
             _driver = driver;
             _scopeFactory = scope;
         }
+        public void PlaceDummyPalletsInWarehouse()
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            bool anyPalletSpotsFilled = db.PalletSpots.Any(sp => sp.CurrentPalletId != null);
+            if (anyPalletSpotsFilled)
+            {
+                return; // Exit if any pallet spots are already filled
+            }
+            var newdummypallets = _inboundshipmentservice.CreateDummyDataPallets();
+            db.Pallets.AddRange(newdummypallets);
+            db.SaveChanges();
+            var pallets = db.Pallets.ToList();
+            foreach (var pallet in pallets)
+            {
+                var location = FindPalletSpotLocation(pallet);
+                if(location != "Ingen plats hittades")
+                {
+                    PlacePalletInWarehouseAsync(pallet.Id, location);
+                }
+            }
+        }
         public async Task PlacePalletInWarehouseAsync(int palletId, string location)
         {
             using var scope = _scopeFactory.CreateScope();
@@ -27,7 +49,8 @@ namespace Epixx.Services
             var spot = await db.PalletSpots
                                .Include(sp => sp.CurrentPallet)
                                .SingleOrDefaultAsync(sp => sp.Location == location);
-
+            if (pallet.Location == null)
+                pallet.Location = location;
             // Detach pallet from any previous spot
             var oldSpot = await db.PalletSpots.SingleOrDefaultAsync(s => s.CurrentPalletId == pallet.Id);
             if (oldSpot != null)

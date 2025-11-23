@@ -19,6 +19,10 @@ namespace Epixx.Controllers
             _palletstorageservice = palletservice;
             _shipmentservice = shipmentservice;
         }
+        public void GenerateWarehouseDummyData()
+        {
+            _palletstorageservice.PlaceDummyPalletsInWarehouse();
+        }
         [HttpPost]
         public IActionResult StoreInboundShipment([FromBody] string storedpalletbarcode)
         {

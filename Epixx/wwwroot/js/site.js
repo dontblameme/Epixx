@@ -6,6 +6,7 @@
     const palletListParent = document.querySelector("ol.ps-3");
     const startButton = document.getElementById("start-button");
     const cancelButton = document.getElementById("cancel-button");
+    
     initialize();
 
     function initialize() {
@@ -15,7 +16,7 @@
             initializeExistingInputs();
             refreshPalletList();
             setupCancelButton();
-            setInterval(refreshPalletList, 30000);
+            setInterval(refreshPalletList, 10000);
         }
   
     }

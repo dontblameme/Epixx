@@ -1,6 +1,7 @@
 ﻿using Epixx.Data;
 using Epixx.Models;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel;
 
 public class InboundShipmentService : BackgroundService
 {
@@ -16,7 +17,7 @@ public class InboundShipmentService : BackgroundService
         using (var scope = _scopeFactory.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var pallets = db.Pallets.Where(p => p.Status == "Awaiting Storage").ToList();
+            var pallets = db.Pallets.Where(p => p.Status == "Awaiting Storage").Take(50).ToList();
             return pallets;
         }
     }
@@ -29,7 +30,7 @@ public class InboundShipmentService : BackgroundService
             db.SaveChanges();
         }
     }
-    private List<PalletType> createDummyPalletTypes()
+    private List<PalletType> CreateDummyPalletTypes()
     {
         List<PalletType> palletTypes = new();
         palletTypes.Add(new PalletType
@@ -82,6 +83,25 @@ public class InboundShipmentService : BackgroundService
         });
         return palletTypes;
     }
+    public List<Pallet> CreateDummyDataPallets()
+    {
+        List<Pallet> pallets = new();
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var palletTypes = db.PalletTypes.ToList(); // load all types once
+        if (!palletTypes.Any()) return pallets;
+
+        for (int i = 0; i < 50; i++)
+        {
+            var randompalletType = palletTypes[_rnd.Next(palletTypes.Count)];
+            var newpallets = CreateNewPallets(randompalletType);
+            pallets.AddRange(newpallets);
+        }
+
+        return pallets;
+    }
+
     private List<Pallet> CreateNewPallets(PalletType pallettype)
     {
         List<Pallet> pallets = new();
@@ -109,7 +129,7 @@ public class InboundShipmentService : BackgroundService
             if (!db.PalletTypes.Any())
             {
                 // populate initial dummy data
-                db.AddRange(createDummyPalletTypes());
+                db.AddRange(CreateDummyPalletTypes());
                 await db.SaveChangesAsync(stoppingToken);
             }
         }
@@ -120,7 +140,7 @@ public class InboundShipmentService : BackgroundService
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             int countTypes = await db.PalletTypes.CountAsync();
             int index = _rnd.Next(countTypes);
-            int count = await db.Pallets.CountAsync();
+            int count = await db.Pallets.Where(x => x.Status == "Awaiting Storage").CountAsync();
             //Get a random pallet type from db
             var randompalletType = await db.PalletTypes.Skip(index).FirstOrDefaultAsync(); 
             if(count < 50)
@@ -130,7 +150,7 @@ public class InboundShipmentService : BackgroundService
                 await db.SaveChangesAsync(stoppingToken);
             }
             // periodic work
-            await Task.Delay(30000, stoppingToken);
+            await Task.Delay(10000, stoppingToken);
         }
 
     }

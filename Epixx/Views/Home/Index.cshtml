@@ -1,4 +1,5 @@
 ﻿<div class="menu-container">
+    <button class="generate-btn">Generate Warehouse</button>
     <div class="menu">
         <h1 class="menu-title">EPIX</h1>
 
@@ -15,3 +16,19 @@
         <a class="menu-btn disabled-btn">Test</a>
     </div>
 </div>
+<script>
+    document.querySelector('.generate-btn').addEventListener('click', function() {
+        fetch('/Warehouse/GenerateWarehouseDummyData')
+            .then(response => {
+                if (response.ok) {
+                    alert('Warehouse generated successfully!');
+                } else {
+                    alert('Error generating warehouse.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error generating warehouse.');
+            });
+    });
+</script>
