@@ -14,6 +14,7 @@ namespace Epixx.Data
         public DbSet<PalletType> PalletTypes { get; set; }
         public DbSet<Row> Rows { get; set; }
         public DbSet<Store> Stores { get; set; }
+        public DbSet<LoadingDock> LoadingDocks { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Driver (1) -> Pallet (many)

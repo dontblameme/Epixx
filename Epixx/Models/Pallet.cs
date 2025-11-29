@@ -13,10 +13,10 @@ namespace Epixx.Models
 
         [Required]
         public long Barcode { get; set; }
-
+        public Category Category { get; set; }
         public int Width { get; set; } = 80;
         public int Height { get; set; }
-
+        public double Weight { get; set; }
         [Required]
         public int Amount { get; set; }
 
@@ -24,7 +24,8 @@ namespace Epixx.Models
         public string Status { get; set; }
 
         public string? Location { get; set; }
-
+        public int? StoreId { get; set; }
+        [ForeignKey("StoreId")]
         public int? DriverId { get; set; }
         [ForeignKey("DriverId")]
 

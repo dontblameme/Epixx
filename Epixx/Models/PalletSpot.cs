@@ -12,7 +12,9 @@ namespace Epixx.Models
         public string Location { get; set; }
         public int? CurrentPalletId { get; set; }
         [ForeignKey("CurrentPalletId")]
-
         public Pallet? CurrentPallet { get; set; }
+        [Required]
+        public Category Category { get; set; }
+
     }
 }

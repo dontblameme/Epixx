@@ -1,0 +1,43 @@
+﻿@{
+    @model List<Epixx.Models.PalletAndStoreDTO>
+    var firstPallet = Model.FirstOrDefault();
+}
+
+<div class="confirmation-container">
+    <h2 class="confirmation-title">
+        Bekräftelse för omflyttning till packyta:
+        <strong>@Model.FirstOrDefault()?.PackingAreaName</strong> 
+        </br>
+        Butik: <strong>@Model.FirstOrDefault()?.StoreName</strong>
+    </h2>
+    <input id="actual-code" type="hidden" value="@firstPallet.Code" />
+    <div class="confirmation-section">
+        <label for="location-input">Ange kod:</label>
+        <input id="code-input" type="text" autofocus />
+    </div>
+
+    <div>
+        <hr />
+        <table>
+            <thead>
+                <tr>
+                    <th>Nummer</th>
+                    <th>Beskrivning</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr>
+                        <td class="list-item-barcode">@p.Barcode</td>
+                        <td class="list-item-description">
+                            @(p.Description.Length > 30
+                                                    ? p.Description.Substring(0, 30) + "..."
+                                                    : p.Description)
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

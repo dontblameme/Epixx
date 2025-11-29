@@ -1,0 +1,54 @@
+﻿@{
+    @model List<Epixx.Models.PalletAndStoreDTO>
+    var firstPallet = Model.FirstOrDefault();
+}
+<div class="store-inboundshipment-container">
+    <div class="choosen">
+        <p>Pallflytt till @firstPallet.PackingAreaName: @firstPallet.StoreName </p>
+        <label>Skanna en utav pallplatserna</label>
+        <input id="location-scan-input" placeholder="@firstPallet.Location" type="text" />
+        <div class="total-weight">
+            Total vikt: <span id="totalWeight">0</span> kg
+        </div>
+    </div>
+    <div class="cancel-buttons">
+        <a id="start-packing-area-transfer-button" href="#" class="btn btn-success custom-btn">
+            Starta
+        </a>
+        <a href="#" id="quit-mission" class="btn btn-secondary cancel-btn">
+            Avbryt runda
+        </a>
+    </div>
+    <div>
+        <hr>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Plats</th>
+                    <th>Beskrivning</th>
+                    <th>Vikt (kg)</th>
+                    <th>Höjd (cm)</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    var warningClass = p.Height == 210 ? "warning-row" : "";
+
+                    <tr class="@warningClass">
+                        <td class="list-item-location">@p.Location</td>
+                        <td class="list-item-description">
+                            @(p.Description.Length > 30
+                                                    ? p.Description.Substring(0, 30) + "..."
+                                                    : p.Description)
+                        </td>
+                        <td class="list-item-weight">@p.Weight</td>
+                        <td class="list-item-height">@p.Height</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

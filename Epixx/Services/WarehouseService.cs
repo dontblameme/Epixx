@@ -22,6 +22,7 @@ namespace Epixx.Services
             {
                 rows[i] = new Row();
                 rows[i].Name = spotconfig[i].Name;
+                rows[i].Type = spotconfig[i].Type;
                 int noofspotsinthiscol = _rnd.Next(5, 8);
                 List<ColConfig> heights = GetNewPalletSpotHeights(noofspotsinthiscol);
                 //for each spot in the current iteration of block like RA101 or RA401 etc..
@@ -35,7 +36,7 @@ namespace Epixx.Services
                         {
                             string location = spotconfig[i].Name.Contains('1') ? (255 - spotconfig[i].Spots) + j + 1 + " " + heights[k].ColNumber : (555 - spotconfig[i].Spots) + j + 1 + " " + heights[k].ColNumber;
                             string rowname = rows[i].Name.Remove(2, 1);
-                            rows[i].PalletSpots.Add(new PalletSpot { Height = heights[k].height, Location = rowname + " " + location});
+                            rows[i].PalletSpots.Add(new PalletSpot { Height = heights[k].height, Category = rows[i].Type ,Location = rowname + " " + location});
                         }
 
                     }
@@ -125,26 +126,26 @@ namespace Epixx.Services
             return new List<RowConfig>
             {
                 // RA → RG
-                new RowConfig { Name = "RA1", Spots = Spots(185, 255) },
-                new RowConfig { Name = "RA2", Spots = Spots(485, 555) },
-                new RowConfig { Name = "RB1", Spots = Spots(185, 255) },
-                new RowConfig { Name = "RB2", Spots = Spots(485, 555) },
-                new RowConfig { Name = "RC1", Spots = Spots(185, 255) },
-                new RowConfig { Name = "RC2", Spots = Spots(485, 555) },
-                new RowConfig { Name = "RD1", Spots = Spots(179, 255) },
-                new RowConfig { Name = "RD2", Spots = Spots(479, 555) },
-                new RowConfig { Name = "RE1", Spots = Spots(179, 255) },
-                new RowConfig { Name = "RE2", Spots = Spots(479, 555) },
-                new RowConfig { Name = "RF1", Spots = Spots(162, 255) },
-                new RowConfig { Name = "RF2", Spots = Spots(455, 555) },
-                new RowConfig { Name = "RG1", Spots = Spots(155, 255) },
-                new RowConfig { Name = "RG2", Spots = Spots(401, 555) },
+                new RowConfig { Name = "RA1", Type = Category.Electronics, Spots = Spots(185, 255) },
+                new RowConfig { Name = "RA2", Type = Category.Electronics, Spots = Spots(485, 555) },
+                new RowConfig { Name = "RB1", Type = Category.Electronics, Spots = Spots(185, 255) },
+                new RowConfig { Name = "RB2", Type = Category.Electronics, Spots = Spots(485, 555) },
+                new RowConfig { Name = "RC1", Type = Category.Electronics, Spots = Spots(185, 255) },
+                new RowConfig { Name = "RC2", Type = Category.Electronics, Spots = Spots(485, 555) },
+                new RowConfig { Name = "RD1", Type = Category.Furniture, Spots = Spots(179, 255) },
+                new RowConfig { Name = "RD2", Type = Category.Furniture, Spots = Spots(479, 555) },
+                new RowConfig { Name = "RE1", Type = Category.Furniture, Spots = Spots(179, 255) },
+                new RowConfig { Name = "RE2", Type = Category.Furniture, Spots = Spots(479, 555) },
+                new RowConfig { Name = "RF1", Type = Category.Furniture, Spots = Spots(162, 255) },
+                new RowConfig { Name = "RF2", Type = Category.Furniture, Spots = Spots(455, 555) },
+                new RowConfig { Name = "RG1", Type = Category.Clothing, Spots = Spots(155, 255) },
+                new RowConfig { Name = "RG2", Type = Category.Clothing, Spots = Spots(401, 555) },
 
                 // RH → RP
-                new RowConfig { Name = "RH1", Spots = Spots(101, 255) },
-                new RowConfig { Name = "RH2", Spots = Spots(401, 555) },
-                new RowConfig { Name = "RI1", Spots = Spots(101, 255) },
-                new RowConfig { Name = "RI2", Spots = Spots(401, 555) },
+                new RowConfig { Name = "RH1", Type = Category.Clothing, Spots = Spots(101, 255) },
+                new RowConfig { Name = "RH2", Type = Category.Clothing, Spots = Spots(401, 555) },
+                new RowConfig { Name = "RI1", Type = Category.Clothing, Spots = Spots(101, 255) },
+                new RowConfig { Name = "RI2", Type = Category.Clothing, Spots = Spots(401, 555) },
                 new RowConfig { Name = "RJ1", Spots = Spots(101, 255) },
                 new RowConfig { Name = "RJ2", Spots = Spots(401, 555) },
                 new RowConfig { Name = "RK1", Spots = Spots(101, 255) },
@@ -159,7 +160,7 @@ namespace Epixx.Services
                 new RowConfig { Name = "RO2", Spots = Spots(401, 555) },
                 new RowConfig { Name = "RP1", Spots = Spots(101, 255) },
                 new RowConfig { Name = "RP2", Spots = Spots(401, 555) },
-                // RQ → SJ (example pattern for right side up to 555)
+                // RQ → SJ 
                 new RowConfig { Name = "RQ1", Spots = Spots(101, 255) },  // left
                 new RowConfig { Name = "RQ2", Spots = Spots(416, 555) },  // right
                 new RowConfig { Name = "RR1", Spots = Spots(116, 255) },

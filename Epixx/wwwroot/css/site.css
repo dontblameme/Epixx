@@ -1,25 +1,27 @@
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+    html {
+        font-size: 16px;
+    }
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
 }
 
 body {
     font-family: "Inter", sans-serif;
 }
+
+/* Login page */
 .menu-container {
     position: fixed;
     inset: 0;
@@ -28,7 +30,7 @@ body {
     align-items: center;
     overflow: hidden;
 }
-/* Fullscreen center */
+
 .login-wrapper {
     position: fixed;
     inset: 0;
@@ -38,7 +40,6 @@ body {
     background: white;
 }
 
-/* Card container */
 .login-card {
     display: flex;
     flex-direction: column;
@@ -51,7 +52,6 @@ body {
     gap: 20px;
 }
 
-/* Title */
 .login-title {
     font-size: 3rem;
     font-weight: bold;
@@ -59,7 +59,7 @@ body {
     color: #333;
 }
 
-/* Inputs */
+/* Login inputs + button */
 .form-input {
     width: 100%;
     padding: 12px 15px;
@@ -74,7 +74,6 @@ body {
     outline: none;
 }
 
-/* Button */
 .login-btn {
     width: 100%;
     padding: 12px;
@@ -87,27 +86,11 @@ body {
     transition: background 0.2s;
 }
 
-.login-btn:hover {
-    background: #5a4ac0;
-}
+    .login-btn:hover {
+        background: #5a4ac0;
+    }
 
-.form-input{
-    border-radius: 10px;
-}
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-    color: var(--bs-secondary-color);
-    text-align: end;
-}
-
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
-}
-.menu-container {
-    display: flex;
-    justify-content: center;
-    margin-top: 40px;
-}
-
+/* Menu page */
 .menu {
     display: flex;
     flex-direction: column;
@@ -144,6 +127,8 @@ body {
     color: white;
     transform: scale(1.03);
 }
+
+/* Generate button (global) */
 .generate-btn {
     position: fixed;
     top: 20px;
@@ -168,167 +153,8 @@ body {
 .generate-btn:active {
     transform: translateY(0px);
 }
+
 .disabled-btn {
     opacity: 0.4;
     cursor: not-allowed;
 }
-/* Container Layout */
-.inbound-container {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 25px;
-    font-family: "Inter", sans-serif;
-}
-
-/* Title */
-.title {
-    font-size: 2.2rem;
-    font-weight: 600;
-}
-
-/* Top Section Buttons */
-.button-row {
-    margin-top: 15px;
-    display: flex;
-    gap: 15px;
-}
-
-.custom-btn {
-    font-size: 1.1rem;
-    padding: 10px 20px;
-}
-
-.cancel-btn {
-    background-color: #d0d0d0;
-    color: #333;
-    border: none;
-    padding: 10px 20px;
-    font-size: 1.1rem;
-}
-
-    .cancel-btn:hover {
-        background-color: #bcbcbc;
-    }
-
-/* Forms Section */
-.forms {
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.form-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.pallet-barcode-input {
-    padding: 12px;
-    width: 260px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    font-size: 1.1rem;
-}
-
-.delete-pallet-button {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-}
-
-.icon {
-    font-size: 28px;
-    color: #b33;
-}
-
-/* Scanned List */
-.scanned-list {
-    margin-top: 20px;
-    text-align: center;
-}
-
-/* Toggle Button */
-.toggle-btn {
-    margin-top: 20px;
-    background-color: #004478;
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.toggle-btn:hover {
-    background-color: #00345c;
-}
-
-/* Table */
-.table-wrapper {
-    margin-top: 15px;
-    display: none;
-}
-
-.table-wrapper.show {
-    display: block;
-}
-
-.pallet-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-
-.pallet-table th,
-.pallet-table td {
-    padding: 12px;
-    border-bottom: 1px solid #ddd;
-}
-
-.pallet-table th {
-    background-color: #f6f6f6;
-    font-weight: 600;
-}
-
-.pallet-table tr:hover {
-    background-color: #f0f8ff;
-}
-/* Position form + list next to each other */
-.container-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 2rem;
-    width: 100%;
-}
-
-/* Form column */
-.forms {
-    flex: 1;
-}
-
-/* Right-side selected list */
-.selected-list-container {
-    width: 250px;
-    background: #f8f8f8;
-    padding: 1rem;
-    border-radius: 0.75rem;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-/* Nice styling for selected pallets */
-.selected-list li {
-    background: white;
-    padding: 0.5rem 0.75rem;
-    margin-bottom: 0.5rem;
-    border-radius: 0.5rem;
-    border: 1px solid #ddd;
-    font-weight: 500;
-}
-.border-error {
-    border: 2px solid #ff7675 !important;
-    border-radius: 6px;
-    background-color: rgba(255, 118, 117, 0.05);
-}
-

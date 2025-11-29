@@ -8,10 +8,8 @@ namespace Epixx.Controllers
     public class HomeController : Controller
     {
         private readonly DriverService _driverservice;
-        private readonly WarehouseService _warehouse;
         public HomeController(DriverService service, WarehouseService warehouse)
         {
-            _warehouse = warehouse;
             _driverservice = service;
         }
         [HttpGet]

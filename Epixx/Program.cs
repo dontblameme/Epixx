@@ -16,10 +16,13 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<WarehouseService>();
 
 builder.Services.AddSingleton<DriverService>();
-builder.Services.AddSingleton<PalletStorageService>();
+builder.Services.AddSingleton<PalletService>();
 builder.Services.AddSingleton<InboundShipmentService>();
-
+builder.Services.AddSingleton<AutoService>();
+builder.Services.AddSingleton<StoreService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<InboundShipmentService>());
+builder.Services.AddHostedService<AutoService>();
+
 
 var app = builder.Build();
 
@@ -34,8 +37,10 @@ using (var scope = app.Services.CreateScope())
     {
         var rows = warehouseservice.Warehouse;
         db.Rows.AddRange(rows);
+
         db.SaveChanges();
     }
+
 }
 
 app.UseSession();

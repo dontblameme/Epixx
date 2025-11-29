@@ -38,6 +38,8 @@ public class InboundShipmentService : BackgroundService
             Description = "Vinterkängor 42",
             Height = 130,
             Amount = 55,
+            Weight = 152.8,
+            Category = Category.Clothing
           
         });
         palletTypes.Add(new PalletType
@@ -45,6 +47,7 @@ public class InboundShipmentService : BackgroundService
             Description = "Naturtrogen julgran 210 cm",
             Height = 150,
             Amount = 21,
+            Weight = 104.5
 
         });
         palletTypes.Add(new PalletType
@@ -52,13 +55,7 @@ public class InboundShipmentService : BackgroundService
             Description = "Julgranskrage Ø50/70 cm",
             Height = 130,
             Amount = 40,
-
-        });
-        palletTypes.Add(new PalletType
-        {
-            Description = "Julgranskrage Ø50/70 cm",
-            Height = 130,
-            Amount = 40,
+            Weight = 130.3
 
         });
         palletTypes.Add(new PalletType
@@ -66,20 +63,25 @@ public class InboundShipmentService : BackgroundService
             Description = "Julgransfot för konstgran",
             Height = 150,
             Amount = 20,
+            Weight = 95.0
 
         });
         palletTypes.Add(new PalletType
         {
             Description = "Pilejacka herr",
             Height = 150,
-            Amount = 200
+            Amount = 200,
+            Weight = 174.2,
+            Category = Category.Clothing
         });
         palletTypes.Add(new PalletType
         {
 
             Description = "MIG-svets 100 A",
             Height = 210,
-            Amount = 2
+            Amount = 2,
+            Weight = 350.0,
+            Category = Category.Electronics
         });
         return palletTypes;
     }
@@ -114,6 +116,8 @@ public class InboundShipmentService : BackgroundService
             pallet.Description = pallettype.Description;
             pallet.Amount = pallettype.Amount;
             pallet.Height = pallettype.Height;
+            pallet.Weight = pallettype.Weight;
+            pallet.Category = pallettype.Category;
             pallets.Add(pallet);
            
 

@@ -11,5 +11,8 @@ namespace Epixx.Models
         public int Height { get; set; } //height of the pallet in cm
         [Required]
         public int Amount { get; set; }
+        public Category Category { get; set; } = Category.Miscellaneous;
+        [Required]
+        public double Weight { get; set; } //weight of the pallet in kg
     }
 }

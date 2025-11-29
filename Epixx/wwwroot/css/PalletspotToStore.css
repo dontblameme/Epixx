@@ -1,0 +1,96 @@
+﻿.choosen p {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    padding: 12px 16px;
+    background-color: #d7e9f8;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    color: #444;
+}
+.crossed td {
+    text-decoration: line-through;
+}
+.confirmation-container {
+    max-width: 650px;
+    margin: 40px auto;
+    padding: 20px;
+    color: #333;
+}
+
+.confirmation-title {
+    background: #f8d7da;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.confirmation-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+}
+
+.confirmation-section label {
+    font-weight: 600;
+}
+
+.confirmation-section input {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+hr {
+    margin: 30px 0;
+    border: none;
+    border-top: 1px solid #eee;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+thead {
+    background: #f7f7f7;
+}
+
+th, td {
+    text-align: left;
+    padding: 12px 10px;
+}
+
+tbody tr:hover {
+    background: #f0f0f0;
+}
+.warning-row {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #ffecb5; 
+    border-right: 4px solid #ffecb5;
+}
+.delete-cell {
+    text-align: center;
+}
+
+.error-message {
+    background-color: #f8d7da; /* light red */
+    color: #721c24; /* dark red text */
+    border: 1px solid #f5c6cb; /* soft red border */
+    padding: 10px 12px;
+    border-radius: 4px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+

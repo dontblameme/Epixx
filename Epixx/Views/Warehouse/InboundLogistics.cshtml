@@ -1,4 +1,4 @@
-﻿@model List<Epixx.Models.Pallet>
+﻿@model Epixx.Models.DoubleDTO
 
 <div class="inbound-container">
     <div class="top-section">
@@ -19,6 +19,18 @@
 
         <div class="container-top">
             <div class="forms">
+                @if (Model.DriverPallet.Any())
+                {
+                    @foreach (var pallet in Model.DriverPallet)
+                    {
+                        <div class="form-group">
+                            <input disabled class="pallet-barcode-input" type="text" value="@pallet.Barcode" />
+                            <button type="button" class="delete-pallet-button d-none">
+                                <i style="font-size: 30px;" class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    }
+                }
                 <div class="form-group">
                     <input class="pallet-barcode-input" type="text" autofocus />
                     <button type="button" class="delete-pallet-button d-none">
@@ -31,12 +43,35 @@
                         <i style="font-size: 30px;" class="bi bi-trash"></i>
                     </button>
                 </div>
+               
+               
+                
             </div>
 
             <div class="selected-list-container">
                 <ol class="ps-3 selected-list">
                     <li class="py-1 d-none"></li>
+                    @if(Model.DriverPallet.Any())
+                    {
+                        @foreach (var pallet in Model.DriverPallet)
+                        {
+                            <li class="py-1 old">@pallet.Location</li>
+                        }
+                    }
                 </ol>
+            </div>
+            <div class="total-weight">
+                Total vikt: <span id="totalWeight">
+                    @if(Model.DriverPallet.Any())
+                    {
+                        @(Model.DriverPallet.Sum(p => p.Weight))
+                    }
+                    else
+                    {
+                        @:0
+                    }
+
+                </span> kg
             </div>
         </div>
 
@@ -53,10 +88,19 @@
                         <th>Steckkod</th>
                         <th>Beskrivning</th>
                         <th>Höjd (cm)</th>
+                        <th>Vikt (kg)</th>
                     </tr>
                 </thead>
-                <tbody id="palletsBody">
-                    @await Html.PartialAsync("_PalletTable", Model)
+                <tbody>
+                    @foreach (var pallet in Model.Pallet)
+                    {
+                        <tr>
+                            <td class="barcodes" style="font-size: 1.5rem;">@pallet.Barcode</td>
+                            <td>@pallet.Description</td>
+                            <td>@pallet.Height</td>
+                            <td>@pallet.Weight</td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>

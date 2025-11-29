@@ -14,7 +14,22 @@ namespace Epixx.Services
             _scopeFactory = scopeFactory;
             _httpContextAccessor = httpContextAccessor;
         }
-
+        public DriverTask? GetDriverTask()
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var driver = GetDriver(db);
+            return driver?.CurrentTask;
+        }
+        public void SetDriverTask(DriverTask task)
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var driver = GetDriver(db);
+            if (driver == null) throw new InvalidOperationException("Driver not found.");
+            driver.CurrentTask = task;
+            db.SaveChanges();
+        }
         public string? GetCurrentDriverName()
         {
             return _httpContextAccessor.HttpContext?.Session.GetString("User");
@@ -142,14 +157,45 @@ namespace Epixx.Services
         // ----------------------------------------------
         // FETCH PALLETS
         // ----------------------------------------------
-        public List<Pallet> FetchAllPalletsFromDriver()
+        public List<Pallet> FetchAllPalletsFromDriverPackingAreaTransfer()
         {
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var driver = GetDriver(db);
+            if(!driver.pallets.Any())
+                return new List<Pallet>();
 
-            return GetDriver(db)?.pallets.ToList() ?? new List<Pallet>();
+            var pallets = db.Pallets.Where(p => p.DriverId == driver.Id && p.Status == "PackingAreaTransfer")
+                .ToList();
+            return pallets;
         }
+        public List<Pallet> FetchAllPalletsFromDriverPackingAreaConfirmation()
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var driver = GetDriver(db);
+            if(!driver.pallets.Any())
+                return new List<Pallet>();
+            var pallets = db.Pallets.Where(p => p.DriverId == driver.Id && p.Status == "PackingAreaConfirmation")
+                .ToList();
+            return pallets;
 
+        }
+        public List<Pallet> FetchAllPalletsFromDriverAwaitingStorage()
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            return GetDriver(db)?.pallets.Where(p => p.Status == "Awaiting Storage").ToList() ?? new List<Pallet>();
+
+        }
+        public List<Pallet> FetchAllPalletsFromDriverStored()
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var driver = GetDriver(db);
+            if (driver == null) return new List<Pallet>();
+            return driver.pallets.Where(p => p.Status == "Stored").ToList();
+        }
         public Pallet? FetchSpecificPalletByBarcode(string barcode)
         {
             using var scope = _scopeFactory.CreateScope();
@@ -170,14 +216,38 @@ namespace Epixx.Services
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+            // Load driver WITH pallets
+            var driver = db.Drivers
+                .Include(d => d.pallets)
+                .FirstOrDefault();
+
+            if (driver == null)
+                return;
+
+            // Attach and update pallet
+            var palletEF = db.Pallets.FirstOrDefault(p => p.Id == pallet.Id);
+            if (palletEF == null)
+                return;
+
+            palletEF.Location = pallet.Location;
+
+            // Avoid duplicates
+            if (!driver.pallets.Any(p => p.Id == palletEF.Id))
+                driver.pallets.Add(palletEF);
+
+            db.SaveChanges();
+        }
+        public void RemovePalletsFromDriverByStatus(string status)
+        {
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var driver = GetDriver(db);
             if (driver == null) return;
-
-            // ensure attached pallet
-            var palletEF = db.Pallets.Find(pallet.Id);
-            if (palletEF == null) return;
-            palletEF.Location = pallet.Location;
-            driver.pallets.Add(palletEF);
+            var palletsToRemove = driver.pallets.Where(p => p.Status == status).ToList();
+            foreach (var pallet in palletsToRemove)
+            {
+                driver.pallets.Remove(pallet);
+            }
             db.SaveChanges();
         }
 

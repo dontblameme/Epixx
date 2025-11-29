@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Epixx.Models
 {
@@ -8,9 +9,9 @@ namespace Epixx.Models
         [Required]
         public string Name { get; set; } = "Falköping"; //Store name
         [Required]
-        public int Capacity { get; set; } //How many pallets it can store before departure
-        [Required]
         public int Code { get; set; } //koden föraren måste ange för att placera pallen
+        public int? LoadingDockId { get; set; }
+        [ForeignKey("LoadingDockId")]
         public List<Pallet>? Pallets { get; set; }
     }
 }
