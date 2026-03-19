@@ -19,8 +19,12 @@
                 const actualCode = document.getElementById("actual-code").value.trim();
                 if (input.length > 2) {
                     if (input === actualCode) {
-                        await fetch('/Auto/CheckOffPalletsFromDriver');
-                        window.location.href = "/Auto/PackingAreaTransfer";
+                        await fetch('/Auto/CheckOffPalletsFromDriver', {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify("PackingAreaConfirmation")
+                        });
+                        window.location.href = "/Auto/FindAutoMission";
                     } else {
                         e.target.focus();
                         e.target.select();
@@ -89,9 +93,11 @@
     }
 
     // --- Height + 210 Logic ---
-    function checkTwoTenStatusAllCases(height) {
-        const hasHidden = document.querySelector("tr.d-none") !== null;
-        return hasHidden && height === 210;
+    async function checkTwoTenStatusAllCases(height) {
+        console.log(height);
+        const response = await fetch('/Auto/TwoTenCheck?incomingpalletheight=' + height + "&status=PackingAreaConfirmation");
+        const has210 = await response.json();
+        return has210;
     }
 
     // --- Input Handling ---
@@ -110,9 +116,8 @@
 
                 const tr = location.closest("tr");
                 const height = Number(tr.querySelector(".list-item-height").textContent);
-
-                // 210 rule check
-                if (checkTwoTenStatusAllCases(height)) {
+                const canAssign = await checkTwoTenStatusAllCases(height);
+                if (canAssign) {
                     showError("Du kan inte tåga 210 pallar!");
                     break;
                 }
@@ -121,9 +126,8 @@
                 await fetch('/Auto/AssignPalletToQueue', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(input)
+                    body: JSON.stringify({ spot: input })
                 });
-
                 // If height 210 → auto redirect
                 if (height === 210) {
                     window.location.href = "/Auto/PackingAreaConfirmation";

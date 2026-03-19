@@ -1,0 +1,27 @@
+﻿@{
+    Layout = "_AdminLayout";
+}
+<div class="table-container">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Användarnamn</th>
+                <th>Roll</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>@user.UserName</td>
+                    <td>@user.Role</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div>
+        <a asp-action="CreateUser" class="admin-btn">Skapa ny användare</a>
+        <a asp-action="Index" asp-controller="Home" class="admin-btn">Tillbaka till meny</a>
+    </div>
+</div>

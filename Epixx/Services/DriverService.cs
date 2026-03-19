@@ -1,274 +1,207 @@
 ﻿using Epixx.Data;
-using Epixx.Models;
+using Epixx.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Epixx.Services
 {
     public class DriverService
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IHttpContextAccessor _http;
+        private readonly AppDbContext _db;
 
-        public DriverService(IServiceScopeFactory scopeFactory, IHttpContextAccessor httpContextAccessor)
+        public DriverService(AppDbContext db, IHttpContextAccessor http)
         {
-            _scopeFactory = scopeFactory;
-            _httpContextAccessor = httpContextAccessor;
+            _db = db;
+            _http = http;
         }
+
+        private string? Username => _http.HttpContext?.Session.GetString("User");
+
+        private Driver? GetDriverWithPallets() =>
+            _db.Drivers
+               .Include(d => d.pallets)
+               .FirstOrDefault(d => d.Name == Username);
+
+        // ---------------------------------------------------------
+        // TASKS
+        // ---------------------------------------------------------
         public DriverTask? GetDriverTask()
         {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var driver = GetDriver(db);
-            return driver?.CurrentTask;
+            return GetDriverWithPallets()?.CurrentTask;
+        }
+        public Driver GetDriver()
+        {
+            var driver = _db.Drivers.FirstOrDefault(d => d.Name == Username);
+            if (driver == null)
+                return new Driver();
+            return driver;
         }
         public void SetDriverTask(DriverTask task)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var driver = GetDriver(db);
+            var driver = GetDriverWithPallets();
             if (driver == null) throw new InvalidOperationException("Driver not found.");
+
             driver.CurrentTask = task;
-            db.SaveChanges();
+            _db.SaveChanges();
         }
-        public string? GetCurrentDriverName()
+        public List<Pallet> FetchAllPalletsFromDriverByStatus(string status)
         {
-            return _httpContextAccessor.HttpContext?.Session.GetString("User");
+            var driver = GetDriverWithPallets();
+            if (driver == null) return new();
+            return _db.Pallets
+                .Where(p => p.DriverId == driver.Id && p.Status == status)
+                .ToList();
         }
 
-        private Driver? GetDriver(AppDbContext db)
-        {
-            var username = GetCurrentDriverName();
-            if (username == null) return null;
-
-            return db.Drivers
-                .Include(d => d.pallets)
-                .FirstOrDefault(d => d.Name == username);
-        }
-
-        // ----------------------------------------------
+        // ---------------------------------------------------------
         // REMOVE ALL PALLETS
-        // ----------------------------------------------
-        public void RemoveAllPalletsFromDriver()
+        // ---------------------------------------------------------
+        public void RemoveAllPalletsFromDriverByStatus(string status)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-            var driver = GetDriver(db);
+            var driver = GetDriverWithPallets();
             if (driver == null) return;
 
-            var palletIds = driver.pallets.Select(p => p.Id).ToList();
-            foreach(var palletId in palletIds)
+            // Clear pallet locations
+            var pallets = _db.Pallets.Where(p => p.Status == status && p.DriverId == driver.Id).ToList();
+            foreach (var p in pallets)
             {
-                var p = db.Pallets.SingleOrDefault(p => p.Id == palletId);
-                p.Location = null;
-            }
-            
-            // Clear all pallet spot references
-            var spots = db.PalletSpots
-                .Include(s => s.CurrentPallet)
-                .Where(s => s.CurrentPallet != null && palletIds.Contains(s.CurrentPallet.Id))
-                .ToList();
-
-            foreach (var spot in spots)
-            {
-                spot.CurrentPalletId = null;
-                spot.CurrentPallet = null;
+                p.DriverId = null;
+                driver.pallets.Remove(p);
             }
 
-            // Clear driver's list
-            driver.pallets.Clear();
-
-            db.SaveChanges();
+            _db.SaveChanges();
         }
 
-        // ----------------------------------------------
+        // ---------------------------------------------------------
         // REMOVE PALLET BY BARCODE
-        // ----------------------------------------------
+        // ---------------------------------------------------------
         public Pallet? RemovePalletFromDriverByBarcode(string barcode)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-            var driver = GetDriver(db);
+            var driver = GetDriverWithPallets();
             if (driver == null) return null;
 
-            long code = long.Parse(barcode);
-
-            var pallet = driver.pallets.FirstOrDefault(p => p.Barcode == code);
+            long parsed = long.Parse(barcode);
+            var pallet = driver.pallets.FirstOrDefault(p => p.Barcode == parsed);
             if (pallet == null) return null;
-
-            // Remove pallet from palletspot
-            var spot = db.PalletSpots
-                .Include(s => s.CurrentPallet)
-                .FirstOrDefault(s => s.CurrentPallet != null && s.CurrentPallet.Id == pallet.Id);
-
-            if (spot != null)
-                spot.CurrentPallet = null;
 
             driver.pallets.Remove(pallet);
 
-            db.SaveChanges();
-
+            _db.SaveChanges();
             return pallet;
         }
 
-        // ----------------------------------------------
-        // REMOVE PALLET (using pallet.Id)
-        // ----------------------------------------------
+        // ---------------------------------------------------------
+        // REMOVE PALLET (by pallet.Id)
+        // ---------------------------------------------------------
         public void RemovePalletFromDriver(Pallet pallet)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-            var driver = GetDriver(db);
+            var driver = GetDriverWithPallets();
             if (driver == null) return;
 
-            // find attached EF entity
-            var palletEF = driver.pallets.FirstOrDefault(p => p.Id == pallet.Id);
-            if (palletEF == null) return;
+            var p = driver.pallets.FirstOrDefault(x => x.Id == pallet.Id);
+            if (p == null) return;
 
-            // Remove from spot
-            var spot = db.PalletSpots
-                .Include(s => s.CurrentPallet)
-                .FirstOrDefault(s => s.CurrentPallet != null && s.CurrentPallet.Id == pallet.Id);
-
-            if (spot != null)
-                spot.CurrentPallet = null;
-
-            driver.pallets.Remove(palletEF);
-
-            db.SaveChanges();
+            driver.pallets.Remove(p);
+            _db.SaveChanges();
         }
+        public int GetDriverId()
+        {
+            var driver = GetDriverWithPallets();
+            if (driver == null) return -1;
+            return driver.Id;
 
-        // ----------------------------------------------
+        }
+        // ---------------------------------------------------------
         // CHECK OWNERSHIP
-        // ----------------------------------------------
+        // ---------------------------------------------------------
         public bool CheckIfPalletIsAssignedToDriver(Pallet pallet)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-            var driver = GetDriver(db);
+            var driver = GetDriverWithPallets();
             if (driver == null) return false;
 
             return driver.pallets.Any(p => p.Id == pallet.Id);
         }
 
-        // ----------------------------------------------
+        // ---------------------------------------------------------
         // FETCH PALLETS
-        // ----------------------------------------------
-        public List<Pallet> FetchAllPalletsFromDriverPackingAreaTransfer()
+        // ---------------------------------------------------------
+        public List<Pallet> FetchAllPalletsFromDriver()
         {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var driver = GetDriver(db);
-            if(!driver.pallets.Any())
-                return new List<Pallet>();
+            var driver = GetDriverWithPallets();
+            if (driver == null) return new();
 
-            var pallets = db.Pallets.Where(p => p.DriverId == driver.Id && p.Status == "PackingAreaTransfer")
+            return _db.Pallets
+                .Where(p => p.DriverId == driver.Id)
                 .ToList();
-            return pallets;
         }
-        public List<Pallet> FetchAllPalletsFromDriverPackingAreaConfirmation()
-        {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var driver = GetDriver(db);
-            if(!driver.pallets.Any())
-                return new List<Pallet>();
-            var pallets = db.Pallets.Where(p => p.DriverId == driver.Id && p.Status == "PackingAreaConfirmation")
-                .ToList();
-            return pallets;
 
-        }
-        public List<Pallet> FetchAllPalletsFromDriverAwaitingStorage()
-        {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            return GetDriver(db)?.pallets.Where(p => p.Status == "Awaiting Storage").ToList() ?? new List<Pallet>();
-
-        }
-        public List<Pallet> FetchAllPalletsFromDriverStored()
-        {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var driver = GetDriver(db);
-            if (driver == null) return new List<Pallet>();
-            return driver.pallets.Where(p => p.Status == "Stored").ToList();
-        }
         public Pallet? FetchSpecificPalletByBarcode(string barcode)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-            var driver = GetDriver(db);
+            var driver = GetDriverWithPallets();
             if (driver == null) return null;
 
-            long code = long.Parse(barcode);
-            return driver.pallets.FirstOrDefault(p => p.Barcode == code);
+            long parsed = long.Parse(barcode);
+            return driver.pallets.FirstOrDefault(p => p.Barcode == parsed);
         }
 
-        // ----------------------------------------------
+        // ---------------------------------------------------------
         // ADD PALLET
-        // ----------------------------------------------
+        // ---------------------------------------------------------
         public void AddPalletToDriver(Pallet pallet)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-            // Load driver WITH pallets
-            var driver = db.Drivers
-                .Include(d => d.pallets)
-                .FirstOrDefault();
-
-            if (driver == null)
-                return;
-
-            // Attach and update pallet
-            var palletEF = db.Pallets.FirstOrDefault(p => p.Id == pallet.Id);
-            if (palletEF == null)
-                return;
-
-            palletEF.Location = pallet.Location;
-
-            // Avoid duplicates
-            if (!driver.pallets.Any(p => p.Id == palletEF.Id))
-                driver.pallets.Add(palletEF);
-
-            db.SaveChanges();
-        }
-        public void RemovePalletsFromDriverByStatus(string status)
-        {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var driver = GetDriver(db);
+            var driver = GetDriverWithPallets();
             if (driver == null) return;
-            var palletsToRemove = driver.pallets.Where(p => p.Status == status).ToList();
-            foreach (var pallet in palletsToRemove)
-            {
-                driver.pallets.Remove(pallet);
-            }
-            db.SaveChanges();
+
+            var dbPallet = _db.Pallets.FirstOrDefault(p => p.Id == pallet.Id);
+            if (dbPallet == null) return;
+
+            dbPallet.Location = pallet.Location;
+            dbPallet.DriverId = driver.Id;
+
+            if (!driver.pallets.Any(p => p.Id == dbPallet.Id))
+                driver.pallets.Add(dbPallet);
+
+            _db.SaveChanges();
         }
 
-        // ----------------------------------------------
+        public List<Pallet> GetAllPalletsFromDriver()
+        {
+            var driver = GetDriverWithPallets();
+            if (driver == null) return new();
+
+            return _db.Pallets
+                .Where(p => p.DriverId == driver.Id)
+                .ToList();
+        }
+
+        public void UnassignAllPalletsFromDriver()
+        {
+           var driver = GetDriver();
+            _db.Pallets.Where(p => p.DriverId == driver.Id).ToList().ForEach(p =>
+            {
+                p.DriverId = null;
+            });
+            _db.PalletSpots.Where(p => p.ReservedByDriverId == driver.Id).ToList().ForEach(p =>
+            {
+                p.ReservedByDriverId = null;
+                p.ReservedUntil = null;
+            });
+            _db.SaveChanges();
+        }
+
+        // ---------------------------------------------------------
         // CREATE DRIVER
-        // ----------------------------------------------
+        // ---------------------------------------------------------
         public string GetOrCreateDriver(string name)
         {
-            using var scope = _scopeFactory.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-            var driver = db.Drivers.FirstOrDefault(d => d.Name == name);
-
-            if (driver == null)
+            var d = _db.Drivers.FirstOrDefault(x => x.Name == name);
+            if (d == null)
             {
-                driver = new Driver { Name = name };
-                db.Drivers.Add(driver);
-                db.SaveChanges();
+                d = new Driver { Name = name };
+                _db.Drivers.Add(d);
+                _db.SaveChanges();
             }
-
-            return driver.Name;
+            return d.Name;
         }
     }
 }

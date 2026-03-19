@@ -1,28 +1,24 @@
-﻿using Epixx.Models;
+﻿using Epixx.Models.DTO;
+using Epixx.Models.Entities;
 using Epixx.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Epixx.Controllers
 {
+    [Authorize]
     public class WarehouseController : Controller
     {
-        private readonly InboundShipmentService _shipmentservice;
         private readonly PalletService _palletservice;
         private readonly StoreService _storeservice;
         private readonly DriverService _driverservice;
-        public WarehouseController(DriverService driverservice,InboundShipmentService shipmentservice, PalletService palletservice, StoreService storeservice)
+        public WarehouseController(DriverService driverservice, PalletService palletservice, StoreService storeservice)
         {
             _storeservice = storeservice;
             _driverservice = driverservice;
             _palletservice = palletservice;
-            _shipmentservice = shipmentservice;
-        }
-        public void GenerateWarehouseDummyData()
-        {
-            _palletservice.PlaceDummyPalletsInWarehouse();
-            _storeservice.CreateDummyStores();
         }
         [HttpPost]
         public IActionResult StoreInboundShipment([FromBody] string storedpalletbarcode)
@@ -30,10 +26,10 @@ namespace Epixx.Controllers
             var pallet = _driverservice.FetchSpecificPalletByBarcode(storedpalletbarcode);
             if(pallet == null)
                 return Json(null);
-            _palletservice.PlacePalletInWarehouseAsync(pallet.Id, pallet.Location);
+            _palletservice.PlacePalletInWarehouse(pallet.Id,pallet.Location ,"Stored");
             _driverservice.RemovePalletFromDriver(pallet);
 
-            var result = _driverservice.FetchAllPalletsFromDriverAwaitingStorage();
+            var result = _driverservice.FetchAllPalletsFromDriverByStatus("AwaitingStorage");
             List<PalletDTO> palletDTOs = new List<PalletDTO>();
             foreach (var p in result)
             {
@@ -50,7 +46,7 @@ namespace Epixx.Controllers
         public IActionResult StoreInboundShipment()
         {
             List<PalletDTO> palletDTOs = new List<PalletDTO>();
-            var pallets = _driverservice.FetchAllPalletsFromDriverAwaitingStorage();
+            var pallets = _driverservice.FetchAllPalletsFromDriverByStatus("AwaitingStorage");
             foreach(var pallet in pallets)
             {
                 palletDTOs.Add(new PalletDTO
@@ -65,7 +61,7 @@ namespace Epixx.Controllers
         [HttpGet]
         public void CancelMission()
         {
-            _driverservice.RemoveAllPalletsFromDriver();
+            _driverservice.RemoveAllPalletsFromDriverByStatus("AwaitingStorage");
         } 
         [HttpPost]
         public void RemovePalletFromQueueByBarcode([FromBody] string barcode)
@@ -80,15 +76,13 @@ namespace Epixx.Controllers
                 return Json(null);
             if (barcode == null)
                 return Json(null);
-            var pallet = _shipmentservice.GetPallets().FirstOrDefault(p => p.Barcode == long.Parse(barcode));
+            var pallet = _palletservice.FetchPalletByBarcode(barcode);
             if (pallet == null)
                 return Json(null);
-            string location = _palletservice.FindPalletSpotLocation(pallet);
-            pallet.Location = location;
             PalletDTO palletDTO = new PalletDTO();
             palletDTO.Barcode = pallet.Barcode;
             palletDTO.Description = pallet.Description;
-            palletDTO.Location = location;
+            palletDTO.Location = pallet.Location;
             palletDTO.Height = pallet.Height;
             palletDTO.Weight = pallet.Weight;
             _driverservice.AddPalletToDriver(pallet);
@@ -103,8 +97,8 @@ namespace Epixx.Controllers
             List<PalletDTO> palletDTOs = new();
             List<DriverPalletDTO> driverpalletDTOs = new();
             _driverservice.SetDriverTask(DriverTask.InboundLogistics);
-            var pallets = _shipmentservice.GetPallets();
-            var driverPallets = _driverservice.FetchAllPalletsFromDriverAwaitingStorage();
+            var pallets = _palletservice.GetPalletsByStatus("AwaitingStorage").Take(50);
+            var driverPallets = _driverservice.FetchAllPalletsFromDriverByStatus("AwaitingStorage");
             if (driverPallets.Any())
             {
                 foreach(var dp in driverPallets)

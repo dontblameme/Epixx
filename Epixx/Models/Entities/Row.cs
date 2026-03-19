@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Epixx.Models
+namespace Epixx.Models.Entities
 {
     public enum Category
     {

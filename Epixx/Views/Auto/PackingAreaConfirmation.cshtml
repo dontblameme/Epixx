@@ -1,5 +1,6 @@
-﻿@{
-    @model List<Epixx.Models.PalletAndStoreDTO>
+﻿@using Epixx.Models.DTO
+@{
+    @model List<PalletAndStoreDTO>
     var firstPallet = Model.FirstOrDefault();
 }
 
@@ -15,7 +16,9 @@
         <label for="location-input">Ange kod:</label>
         <input id="code-input" type="text" autofocus />
     </div>
-
+    <a href="/Home/Index" id="back-to-menu-button-for-transfer" class="btn btn-secondary cancel-btn">
+        Tillbaka till meny
+    </a>
     <div>
         <hr />
         <table>

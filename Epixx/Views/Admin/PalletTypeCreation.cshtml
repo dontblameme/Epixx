@@ -1,0 +1,52 @@
+﻿@model PalletType
+@{
+    Layout = "_AdminLayout";
+}
+
+<form asp-action="PalletTypeCreation" method="post" class="admin-form">
+    <h2>Skapa Palltyp</h2>
+    <div>
+        <label asp-for="Description"></label>
+        <input asp-for="Description" />
+        <span asp-validation-for="Description"></span>
+    </div>
+
+    <div>
+        <label asp-for="Category">Kategori</label>
+        <select asp-for="Category">
+            @foreach (var name in Enum.GetNames(typeof(Epixx.Models.Entities.Category)))
+            {
+                <option value="@name">@name</option>
+            }
+        </select>
+        <span asp-validation-for="Category"></span>
+    </div>
+
+    <div>
+        <label asp-for="Height">Pall Höjd(cm)</label>
+        <input asp-for="Height" type="number" min="0" />
+        <span asp-validation-for="Height"></span>
+    </div>
+
+    <div>
+        <label asp-for="Width">Pall Bredd(cm)</label>
+        <input asp-for="Width" type="number" min="0" />
+    </div>
+
+    <div>
+        <label asp-for="Amount">Antal per pall</label>
+        <input asp-for="Amount" type="number" min="1" />
+        <span asp-validation-for="Amount"></span>
+    </div>
+
+    <div>
+        <label asp-for="Weight">Vikt(kg)</label>
+        <input asp-for="Weight" type="number" min="0" step="0.1" />
+        <span asp-validation-for="Weight"></span>
+    </div>
+
+    <button type="submit">Skapa Palltyp</button>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

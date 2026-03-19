@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Epixx.Models
+namespace Epixx.Models.Entities
 {
     public class Store
     {
@@ -12,6 +12,7 @@ namespace Epixx.Models
         public int Code { get; set; } //koden föraren måste ange för att placera pallen
         public int? LoadingDockId { get; set; }
         [ForeignKey("LoadingDockId")]
+        public LoadingDock? LoadingDock { get; set; }
         public List<Pallet>? Pallets { get; set; }
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Epixx.Models
+﻿using Epixx.Models.Entities;
+
+namespace Epixx.Models
 {
     public class RowConfig
     {

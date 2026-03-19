@@ -1,0 +1,53 @@
+﻿@using Epixx.Models.DTO
+@{
+    @model List<PalletTransferDTO>
+    var firstPallet = Model.FirstOrDefault();
+}
+
+<div class="confirmation-container">
+    <h2 class="confirmation-title">
+        Bekräftelse för omflyttning
+    </h2>
+    <div class="confirmation-section">
+        <label for="barcode-input-label-1">Skanna en av pallarna:</label>
+        <input id="barcode-input-1" placeholder="@firstPallet.Barcode" type="text" autofocus />
+        <label for="destination-input-label-1">Skanna pallplatsen:</label>
+        <input disabled id="destination-input-1" placeholder="@firstPallet.Destination" type="text" />
+    </div>
+    <div>
+        <a href="/Home/Index" id="back-to-menu-button-for-transfer" class="btn btn-secondary cancel-btn">
+            Tillbaka till meny
+        </a>
+    </div>
+    <div>
+        <hr />
+        <table>
+            <thead>
+                <tr>
+                    <th>Nummer</th>
+                    <th>Beskrivning</th>
+                    <th>Destination</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    bool isFirst = true;
+                }
+                @foreach (var p in Model)
+                {
+                   
+                    <tr class="@(isFirst ? "selected" : "")">
+                        <td class="list-item-barcode-3 ">@p.Barcode</td>
+                        <td class="list-item-description-3">
+                            @(p.Description.Length > 30
+                                                    ? p.Description.Substring(0, 30) + "..."
+                                                    : p.Description)
+                        </td>
+                        <td class="list-item-destination-3">@p.Destination</td>
+                    </tr>
+                    isFirst = false;
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

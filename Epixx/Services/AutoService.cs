@@ -1,5 +1,5 @@
 ﻿using Epixx.Data;
-using Epixx.Models;
+using Epixx.Models.Entities;
 
 namespace Epixx.Services
 {
@@ -33,17 +33,29 @@ namespace Epixx.Services
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 var pallet = GetRandomPallet();
-                var store = db.Stores
-                    .OrderBy(s => Guid.NewGuid())
-                    .FirstOrDefault();
-                if (store == null || pallet == null)
-                    continue;
-                pallet.Status = "PackingAreaTransfer";
-                pallet.StoreId = store.Id;
+                int random = _rnd.Next(2);
+                if(random == 0)
+                {
+                    var store = db.Stores
+                   .OrderBy(s => Guid.NewGuid())
+                   .FirstOrDefault();
+                    if (store == null || pallet == null)
+                        continue;
+                    pallet.Status = "PackingAreaTransfer";
+                    pallet.StoreId = store.Id;
+                }
+                else
+                {
+                    if (pallet == null)
+                        continue;
+                    pallet.Status = "PalletTransfer";
+                }
+
                 db.Pallets.Update(pallet);
                 await db.SaveChangesAsync();
-                await Task.Delay(30000, stoppingToken);
+                await Task.Delay(20000, stoppingToken);
             }
         }
     }
 }
+

@@ -1,0 +1,64 @@
+﻿@using Epixx.Models.DTO
+@{
+    @model List<PalletTransferDTO>
+    var firstPallet = Model.FirstOrDefault();
+}
+<div class="store-inboundshipment-container">
+    <div class="choosen">
+        <label>Skanna Pallplatsen eller Pallen</label>
+        <input name="Locationorbarcode" placeholder="@firstPallet.Barcode" id="location-or-barcode" type="text" />
+    </div>
+    <div class="cancel-buttons">
+        <a href="#" id="start-button-for-transfer" class="btn btn-success custom-btn">
+            Starta
+        </a>
+        <div>
+            <a href="#" id="cancel-mission-button-for-transfer" class="btn btn-secondary cancel-btn">
+                Avbryt
+            </a>
+            <a href="#" id="back-to-menu-button-for-transfer" class="btn btn-secondary cancel-btn">
+                Tillbaka till meny
+            </a>
+        </div>
+        
+    </div>
+    <div>
+        <hr>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Från</th>
+                    <th>Beskrivning</th>
+                    <th>Nummer</th>
+                    <th>Till</th>
+                    <th>Höjd</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @{
+                    bool isFirst = true;
+                }
+                @foreach (var p in Model)
+                {
+                    var warningClass = p.Height == 210 ? "warning-row" : "";
+                    <tr class="@(isFirst ? "selected" : "") @(warningClass)">
+                        <td class="location-list-item-2">@p.Location</td>
+                        <td class="description-list-item-2">
+                            @(p.Description.Length > 30
+                                                    ? p.Description.Substring(0, 30) + "..."
+                                                    : p.Description)
+                        </td>
+                        <td class="barcode-list-item-2">@p.Barcode</td>
+                        <td class="destination-list-item-2">@p.Destination</td>
+                        <td class="height-list-item-2">@p.Height</td>
+                    </tr>
+
+                    isFirst = false;
+                }
+            </tbody>
+
+        </table>
+    </div>
+</div>

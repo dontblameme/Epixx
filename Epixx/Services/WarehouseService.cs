@@ -1,4 +1,5 @@
 ﻿using Epixx.Models;
+using Epixx.Models.Entities;
 
 namespace Epixx.Services
 {

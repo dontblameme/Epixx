@@ -1,34 +1,22 @@
-﻿<div class="menu-container">
-    <button class="generate-btn">Generate</button>
+﻿@model Epixx.Models.DTO.IndexDTO
+<div class="menu-container">
     <div class="menu">
         <h1 class="menu-title">EPIX</h1>
 
-        <a href="/Auto/PackingAreaTransfer" class="menu-btn">
+        <a href="/Auto/FindAutoMission" class="menu-btn @(Model.Count == 0 ? "disabled-btn" : "")">
             Automatiska Uppdrag
         </a>
-
         <a href="/Warehouse/InboundLogistics" class="menu-btn">
             Inleverans
         </a>
-
+       
+        <a href="/Admin" class="menu-btn">
+            Lager och Pallhantering
+        </a>
         <a class="menu-btn disabled-btn">Test</a>
-        <a class="menu-btn disabled-btn">Test</a>
-        <a class="menu-btn disabled-btn">Test</a>
+        <form method="post" asp-action="Logout" asp-controller="Home">
+            <button type="submit" class="menu-btn">Logga ut</button>
+            @Html.AntiForgeryToken()
+        </form>
     </div>
 </div>
-<script>
-    document.querySelector('.generate-btn').addEventListener('click', function() {
-        fetch('/Warehouse/GenerateWarehouseDummyData')
-            .then(response => {
-                if (response.ok) {
-                    alert('Warehouse generated successfully!');
-                } else {
-                    alert('Error generating warehouse.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error generating warehouse.');
-            });
-    });
-</script>

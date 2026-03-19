@@ -1,4 +1,4 @@
-﻿namespace Epixx.Models
+﻿namespace Epixx.Models.Entities
 {
     public enum DriverTask
     {

@@ -1,0 +1,48 @@
+﻿@{
+    Layout = "_AdminLayout";
+}
+@model Epixx.Models.DTO.InboundPalletDTO
+<form asp-action="PalletsAwaitingStorage" method="post" class="admin-form">
+    <h2>Checka in anlända pallar</h2>
+    <div class="search-dropdown">
+        <label>Ange Palltyp</label>
+        <input type="text" id="searchInput" placeholder="Sök palltyp..." autocomplete="off" />
+        <ul id="dropdownList" class="dropdown-list"></ul>
+        <input asp-for="Description" type="hidden" name="Description" id="PalletTypeId" />
+    </div>
+    <div>
+        <label asp-for="AmountOfPallets">Antal Pallar</label>
+        <input asp-for="AmountOfPallets" type="number" min="1" />
+        <span asp-validation-for="AmountOfPallets"></span>
+    </div>
+    <button type="submit">Lägg till pallar</button>
+</form>
+<script>
+    const palletTypes = @Html.Raw(Json.Serialize(ViewBag.PalletTypes));
+
+    const input = document.getElementById("searchInput");
+    const list = document.getElementById("dropdownList");
+    const hidden = document.getElementById("PalletTypeId");
+
+    input.addEventListener("input", function () {
+        const value = this.value.toLowerCase();
+        list.innerHTML = "";
+
+        const filtered = palletTypes.filter(p =>
+            p.description.toLowerCase().includes(value)
+        );
+
+        filtered.forEach(p => {
+            const li = document.createElement("li");
+            li.textContent = p.description;
+
+            li.addEventListener("click", () => {
+                input.value = p.description;
+                hidden.value = p.description;
+                list.innerHTML = "";
+            });
+
+            list.appendChild(li);
+        });
+    });
+</script>

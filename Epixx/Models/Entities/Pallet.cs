@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Epixx.Models
+namespace Epixx.Models.Entities
 {
     public class Pallet
     {
@@ -22,7 +22,7 @@ namespace Epixx.Models
 
         [Required]
         public string Status { get; set; }
-
+        public string? Destination { get; set; }
         public string? Location { get; set; }
         public int? StoreId { get; set; }
         [ForeignKey("StoreId")]
