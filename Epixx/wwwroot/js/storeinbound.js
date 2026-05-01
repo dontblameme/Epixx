@@ -52,11 +52,11 @@
     }
     function checkLocationInput() {
         if (locationInput) {
-            locationInput.addEventListener("input", () => {
+            locationInput.addEventListener("input", async () => {
                 const currentSelected = document.querySelector(".selected");
                 const selectedLocation = currentSelected.querySelector(".location-list-item").textContent;
                 if (locationInput.value == selectedLocation) {
-                    fetch('/Warehouse/StoreInboundShipment', {
+                    await fetch('/Warehouse/StoreInboundShipment', {
                         method: 'POST',
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(barcodeInput.value)

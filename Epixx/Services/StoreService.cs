@@ -8,10 +8,11 @@ namespace Epixx.Services
     {
         private readonly AppDbContext _db;
         private readonly Random _rnd = new Random();
-
-        public StoreService(AppDbContext db)
+        private readonly DriverService _driverservice;
+        public StoreService(AppDbContext db, DriverService driverService)
         {
             _db = db;
+            _driverservice = driverService;
         }
 
         public int GetStoreCount()
@@ -40,25 +41,36 @@ namespace Epixx.Services
                 .Select(ld => ld.Name)
                 .FirstOrDefault() ?? "";
         }
-
-        public int GetStoreId()
+        public List<Pallet> GetPalletsByStoreId()
         {
-            var mostCommonStoreId = _db.Pallets
-                .Where(p => p.StoreId != null)
-                .GroupBy(p => p.StoreId)
-                .OrderByDescending(g => g.Count())
-                .Select(g => g.Key)
-                .FirstOrDefault();
-
-            return mostCommonStoreId ?? -1;
-        }
-
-        public List<Pallet> GetPalletsByStoreId(int id)
-        {
-            return _db.Pallets
-                .Where(p => p.StoreId == id && p.Status == "PackingAreaTransfer")
-                .Take(5)
+            var pallets = _db.Pallets
+                .FromSqlRaw(@"
+                    WITH MostPallets AS (
+                        SELECT TOP (1) StoreId
+                        FROM Pallets WITH (ROWLOCK, READPAST, UPDLOCK)
+                        WHERE StoreId IS NOT NULL
+                          AND Status = 'PackingAreaTransfer'
+                          AND DriverId IS NULL
+                        GROUP BY StoreId
+                        ORDER BY COUNT(*) DESC
+                    ),
+                    TopPallets AS (
+                        SELECT TOP (5) Id
+                        FROM Pallets WITH (ROWLOCK, READPAST, UPDLOCK)
+                        WHERE StoreId = (SELECT StoreId FROM MostPallets)
+                          AND Status = 'PackingAreaTransfer'
+                          AND DriverId IS NULL
+                        ORDER BY Id
+                    )
+                    UPDATE p
+                    SET DriverId = {0}
+                    OUTPUT inserted.*
+                    FROM Pallets p
+                    INNER JOIN TopPallets tp ON p.Id = tp.Id;
+                ", _driverservice.GetDriverId())
+                .AsNoTracking()
                 .ToList();
+            return pallets;
         }
 
         public Store? GetStoreByStoreId(int id)
@@ -68,52 +80,6 @@ namespace Epixx.Services
                 .FirstOrDefault();
         }
 
-        public List<string> GetAllDummyStores()
-        {
-            return new List<string>
-            {
-                "Stockholm","Göteborg","Malmö","Uppsala","Västerås","Örebro","Linköping",
-                "Helsingborg","Jönköping","Norrköping","Lund","Umeå","Gävle","Borås","Eskilstuna",
-                "Södertälje","Karlstad","Täby","Växjö","Halmstad","Sundsvall","Luleå","Trollhättan",
-                "Östersund","Borlänge","Falun","Kristianstad","Kalmar","Skövde","Karlskrona",
-                "Uddevalla","Ystad","Visby","Piteå","Kiruna","Varberg","Motala","Nyköping",
-                "Kungsbacka","Alingsås","Hudiksvall","Sandviken","Mora","Arvika","Hässleholm",
-                "Åre","Ängelholm","Oskarshamn","Enköping"
-            };
-        }
-
-        public void CreateDummyStores()
-        {
-            int rand = _rnd.Next(1, 6);
-            var storenames = GetAllDummyStores();
-
-            var createdDocks = new List<LoadingDock>();
-
-            for (int j = 0; j < 3; j++)
-            {
-                char name = (char)('A' + j);
-
-                var dock = new LoadingDock { Name = name.ToString() };
-                _db.LoadingDocks.Add(dock);
-                _db.SaveChanges();
-
-                for (int i = 1; i <= rand; i++)
-                {
-                    string storename = storenames[_rnd.Next(storenames.Count)];
-                    storenames.Remove(storename);
-
-                    var store = new Store
-                    {
-                        Name = storename,
-                        Code = _rnd.Next(100, 999),
-                        LoadingDockId = dock.Id
-                    };
-
-                    _db.Stores.Add(store);
-                }
-            }
-
-            _db.SaveChanges();
-        }
+      
     }
 }

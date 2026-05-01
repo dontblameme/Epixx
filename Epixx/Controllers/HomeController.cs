@@ -59,6 +59,10 @@ namespace Epixx.Controllers
         }
         public IActionResult Index()
         {
+            if(HttpContext.Session.GetString("User") == null)
+            {
+                return RedirectToAction("Login", "Home");
+            }
             var indexDTO = new IndexDTO();
             int count = _palletservice.GetPalletsByStatus("PackingAreaTransfer").Count;
             count += _palletservice.GetPalletsByStatus("PalletTransfer").Count;

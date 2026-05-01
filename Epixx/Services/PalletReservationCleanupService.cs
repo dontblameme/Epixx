@@ -7,7 +7,7 @@ namespace Epixx.Services
     public class ReservationCleanupService : BackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly TimeSpan _interval = TimeSpan.FromMinutes(1); // kör varje minut
+        private readonly TimeSpan _interval = TimeSpan.FromMinutes(20);
 
         public ReservationCleanupService(IServiceScopeFactory scopeFactory)
         {

@@ -1,0 +1,42 @@
+﻿@using Epixx.Models.DTO
+@{
+    Layout = "_AdminLayout";
+}
+@model List<PalletCountDTO>
+<div class="table-container">
+    <h2>Flytta ner pall till plock</h2>
+
+    <form asp-controller="Admin" asp-action="CreateTransfer" method="post">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Artikel</th>
+                    <th>Tillgängliga</th>
+                    <th>Flytta antal</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var dto in Model)
+                {
+                    <tr>
+                        <td>@dto.Description</td>
+                        <td>@dto.Count</td>
+                        <td>
+                            <input type="number"
+                                   name="@dto.Description"
+                                   min="0"
+                                   max="@dto.Count"
+                                   value="0"
+                                   data-max="@dto.Count"
+                                   class="qty-input" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <button type="submit" id="submitBtn" disabled>
+            Skapa transfer
+        </button>
+    </form>
+</div>

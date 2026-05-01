@@ -1,11 +1,12 @@
 ﻿@*Admin Top Menu*@
 <nav id="top-menu">
     <ul>
+        <li><a asp-controller="Home" asp-action="Index">Tillbaka</a></li>
         <li><a asp-controller="Admin" asp-action="Index">Hem</a></li>
-        <li><a asp-controller="Admin" asp-action="PalletTypeCreation">Skapa Palltyp</a></li>
+        <li><a asp-controller="Admin" asp-action="PalletTypeCreation">Skapa palltyp</a></li>
         <li><a asp-controller="Admin" asp-action="PalletsAwaitingStorage">Checka in anlända pallar</a></li>
-        <li><a asp-controller="Orders" asp-action="Index">Order</a></li>
         @if (User.IsInRole("Admin")){
+            <li><a asp-controller="Admin" asp-action="CreatePalletTransferRequests">Flytta pall</a></li>
             <li><a asp-controller="Admin" asp-action="Admin">Hantera användare</a></li>
         }
         

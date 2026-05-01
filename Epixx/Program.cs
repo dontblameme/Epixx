@@ -34,7 +34,6 @@ builder.Services.AddSingleton<WarehouseService>();
 builder.Services.AddScoped<DriverService>();
 builder.Services.AddScoped<PalletService>();
 builder.Services.AddScoped<StoreService>();
-builder.Services.AddHostedService<AutoService>();
 builder.Services.AddHostedService<ReservationCleanupService>();
 
 var app = builder.Build();

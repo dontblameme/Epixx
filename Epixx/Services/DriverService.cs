@@ -48,28 +48,10 @@ namespace Epixx.Services
         {
             var driver = GetDriverWithPallets();
             if (driver == null) return new();
-            return _db.Pallets
+            var pallets =  _db.Pallets
                 .Where(p => p.DriverId == driver.Id && p.Status == status)
                 .ToList();
-        }
-
-        // ---------------------------------------------------------
-        // REMOVE ALL PALLETS
-        // ---------------------------------------------------------
-        public void RemoveAllPalletsFromDriverByStatus(string status)
-        {
-            var driver = GetDriverWithPallets();
-            if (driver == null) return;
-
-            // Clear pallet locations
-            var pallets = _db.Pallets.Where(p => p.Status == status && p.DriverId == driver.Id).ToList();
-            foreach (var p in pallets)
-            {
-                p.DriverId = null;
-                driver.pallets.Remove(p);
-            }
-
-            _db.SaveChanges();
+            return pallets;
         }
 
         // ---------------------------------------------------------
@@ -100,7 +82,8 @@ namespace Epixx.Services
 
             var p = driver.pallets.FirstOrDefault(x => x.Id == pallet.Id);
             if (p == null) return;
-
+            var dbPallet = _db.Pallets.FirstOrDefault(x => x.Id == pallet.Id);
+            dbPallet.DriverId = null;
             driver.pallets.Remove(p);
             _db.SaveChanges();
         }
@@ -180,6 +163,7 @@ namespace Epixx.Services
             _db.Pallets.Where(p => p.DriverId == driver.Id).ToList().ForEach(p =>
             {
                 p.DriverId = null;
+                p.Destination = null;
             });
             _db.PalletSpots.Where(p => p.ReservedByDriverId == driver.Id).ToList().ForEach(p =>
             {

@@ -32,38 +32,48 @@ namespace Epixx.Services
             _db.Pallets.Remove(pallet);
             _db.SaveChanges();
         }
-        public int GetPalletTransferCount()
+        public int GetPalletCountByStatus(string status)
         {
-            return _db.Pallets.Count(p => p.Status == "PalletTransfer");
+            return _db.Pallets.Count(p => p.Status == status);
         }
-        public List<Pallet> GetPalletsForTransfer()
+        public List<Pallet> ClaimPalletsForTransfer()
         {
-            Dictionary<string, int> rowPalletCount = new Dictionary<string, int>();
-            var pallets = new List<Pallet>();
-
-            var ps = _db.Pallets
-                .Where(p => p.Status == "PalletTransfer")
-                .OrderBy(p => p.Id)
-                .Take(10)
-                .ToList();
-
-            var rownames = _db.Rows.Select(r => r.Name).ToList();
-
-            foreach (var row in rownames)
-            {
-                var actualRow = row.Substring(0, 2);
-
-                var palletsInRow = ps
-                    .Where(p => p.Location != null && p.Location.StartsWith(actualRow))
-                    .ToList();
-
-                rowPalletCount[actualRow] = palletsInRow.Count;
-            }
-            var mostPalletsInRow = rowPalletCount.MaxBy(x => x.Value).Key;
-            pallets = ps.Where(p => p.Location != null && p.Location.StartsWith(mostPalletsInRow)).ToList();
+            var pallets = _db.Pallets
+            .FromSqlRaw(@"
+                WITH Candidates AS (
+                    SELECT TOP (20) *
+                    FROM Pallets WITH (ROWLOCK, READPAST, UPDLOCK)
+                    WHERE Status = 'PalletTransfer'
+                      AND DriverId IS NULL
+                      AND Location IS NOT NULL
+                ),
+                RowCounts AS (
+                    SELECT LEFT(Location, 2) AS RowKey, COUNT(*) AS Cnt
+                    FROM Candidates
+                    GROUP BY LEFT(Location, 2)
+                ),
+                BestRow AS (
+                    SELECT TOP (1) RowKey
+                    FROM RowCounts
+                    ORDER BY Cnt DESC
+                ),
+                TopPallets AS (
+                    SELECT TOP (10) c.Id
+                    FROM Candidates c
+                    WHERE LEFT(c.Location, 2) = (SELECT RowKey FROM BestRow)
+                    ORDER BY c.Id
+                )
+                UPDATE p
+                SET DriverId = {0}
+                OUTPUT inserted.*
+                FROM Pallets p
+                INNER JOIN TopPallets tp ON p.Id = tp.Id;
+            ", _driver.GetDriverId())
+            .AsEnumerable()
+            .ToList();
             return pallets;
         }
-       
+
         public List<Pallet> GetPalletsByStatus(string status)
         {
             return _db.Pallets.Where(p => p.Status == status).ToList();
@@ -110,22 +120,17 @@ namespace Epixx.Services
 
             if (pallet == null || spot == null) return;
 
-            using var transaction = _db.Database.BeginTransaction();
-            try
-            {
-                // Assign new spot
-                spot.CurrentPalletId = pallet.Id;
-                spot.CurrentPallet = pallet;
-                pallet.Status = status;
-                pallet.Location = location;
-                _db.SaveChanges();
-                transaction.Commit();
-            }
-            catch
-            {
-                transaction.Rollback();
-                throw;
-            }
+           
+            // Assign new spot
+            spot.CurrentPalletId = pallet.Id;
+            spot.CurrentPallet = pallet;
+            spot.ReservedUntil = null;
+            spot.ReservedByDriverId = null;
+            pallet.Status = status;
+            pallet.Location = location;
+            pallet.Destination = null;
+            _db.SaveChanges();
+         
 
         }
 
@@ -145,60 +150,59 @@ namespace Epixx.Services
             var dtoList = new List<PalletTransferDTO>();
             var now = DateTime.UtcNow;
             var driverId = _driver.GetDriverId();
-
+            PalletSpot? candidateSpot = null;
             foreach (var pallet in pallets)
             {
-                PalletSpot? candidateSpot = null;
-
-                // 🔁 Retry (hanterar concurrency)
                 for (int attempt = 0; attempt < 3; attempt++)
                 {
                     now = DateTime.UtcNow;
-
                     candidateSpot = _db.PalletSpots
-                        .Where(s =>
-                            s.Height >= pallet.Height &&
-                            s.CurrentPallet == null &&
-                            (s.ReservedUntil == null || s.ReservedUntil < now) &&
-                            s.Category == pallet.Category &&
-                            s.Location.EndsWith("1"))
+                        .FromSqlRaw(@"SELECT TOP (1) * 
+                            FROM PalletSpots WITH (UPDLOCK, READPAST, ROWLOCK) 
+                            WHERE Height >= {0} 
+                            AND CurrentPalletId IS NULL 
+                            AND (ReservedUntil IS NULL OR ReservedUntil < {1}) 
+                            AND Category = {2} 
+                            AND Location LIKE '%1' 
+                            ORDER BY Id", pallet.Height, now, pallet.Category)
                         .FirstOrDefault();
 
                     if (candidateSpot == null)
                     {
                         candidateSpot = _db.PalletSpots
-                            .Where(s =>
-                                s.Height >= pallet.Height &&
-                                s.CurrentPallet == null &&
-                                (s.ReservedUntil == null || s.ReservedUntil < now) &&
-                                s.Location.EndsWith("1"))
+                            .FromSqlRaw(@"SELECT TOP (1) * 
+                                FROM PalletSpots WITH (UPDLOCK, READPAST, ROWLOCK) 
+                                WHERE Height >= {0} 
+                                AND CurrentPalletId IS NULL 
+                                AND (ReservedUntil IS NULL OR ReservedUntil < {1}) 
+                                AND Location LIKE '%1' 
+                                ORDER BY Id", pallet.Height, now)
                             .FirstOrDefault();
                     }
 
                     if (candidateSpot == null)
                         break;
-
-                    // 🔒 Försök reservera
                     candidateSpot.ReservedByDriverId = driverId;
-                    candidateSpot.ReservedUntil = now.AddMinutes(10);
+                    candidateSpot.ReservedUntil = now.AddMinutes(300);
 
                     try
                     {
+                        using var transaction = _db.Database.BeginTransaction();
                         _db.SaveChanges();
-                        break; // success
+                        transaction.Commit();
+                        break; 
                     }
                     catch
                     {
-                        // Någon annan hann före → retry
                         _db.Entry(candidateSpot).State = EntityState.Detached;
                         candidateSpot = null;
+                        Thread.Sleep(50);
                     }
                 }
 
                 if (candidateSpot == null)
                     continue;
 
-                _driver.AddPalletToDriver(pallet);
 
                 pallet.Destination = candidateSpot.Location;
 
@@ -213,59 +217,88 @@ namespace Epixx.Services
                 });
             }
 
-            _db.SaveChanges();
-
             return dtoList;
         }
-
-        public string FindPalletSpotLocation(int palletId)
+        public long GenerateUniqueBarcodeForPallet()
         {
-            var pallet = _db.Pallets.SingleOrDefault(p => p.Id == palletId);
+            long barcode;
+            do
+            {
+                barcode = (long)(_rnd.NextDouble() * 9_000_000_000L + 1_000_000_000L);
+            } while (_db.Pallets.Any(p => p.Barcode == barcode));
 
+            return barcode;
+        }
+        public void AddPallet(Pallet pallet)
+        {
+            _db.Pallets.Add(pallet);
+            _db.SaveChanges();
+        }
+        public PalletType GetPalletTypeByDescription(string description)
+        {
+            var palletType = _db.PalletTypes.FirstOrDefault(pt => pt.Description == description);
+            return palletType;
+        }
+        public Pallet FindPalletSpotLocation(Pallet pallet)
+        {
             if (pallet == null)
-                return "Ingen plats hittades";
+                return null;
 
-            var spots = _db.PalletSpots
-                .Include(s => s.CurrentPallet)
-                .Where(s => s.Category == pallet.Category && s.Height > pallet.Height)
-                .ToList();
-
-            string loc = CheckSpotValidity(spots, palletId);
-            if (loc != "No spot found")
+            for (int attempt = 0; attempt < 3; attempt++)
             {
-                return loc;
+                var now = DateTime.UtcNow;
+                var driverId = _driver.GetDriverId();
+
+                using var transaction = _db.Database.BeginTransaction();
+
+                try
+                {
+
+                    var spot = _db.PalletSpots
+                      .FromSqlRaw(@"
+                        WITH cte AS (
+                            SELECT TOP (1) *
+                            FROM PalletSpots WITH (ROWLOCK, READPAST, UPDLOCK)
+                            WHERE CurrentPalletId IS NULL
+                                AND Height >= {0}
+                                AND Location NOT LIKE '%1'
+                                AND (ReservedUntil IS NULL OR ReservedUntil < {1})
+                            ORDER BY 
+                                CASE WHEN Category = {2} THEN 0 ELSE 1 END,
+                                Id
+                        )
+                        UPDATE cte
+                        SET 
+                            ReservedByDriverId = {3},
+                            ReservedUntil = DATEADD(MINUTE, 300, {1})
+                        OUTPUT inserted.*;",
+                          pallet.Height, now, pallet.Category, driverId)
+                      .AsEnumerable()
+                      .FirstOrDefault();
+
+                    if (spot == null)
+                    {
+                        transaction.Rollback();
+                        continue; 
+                    }
+
+                    _db.Attach(spot);
+                    pallet.Destination = spot.Location;
+                    _db.Update(pallet);
+
+                    _db.SaveChanges();
+                    transaction.Commit();
+
+                    return pallet;
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    transaction.Rollback();
+                }
             }
-                
 
-            spots = _db.PalletSpots
-                .Include(s => s.CurrentPallet)
-                .Where(s => s.Height >= pallet.Height)
-                .ToList();
-
-            loc = CheckSpotValidity(spots, palletId);
-            if (loc != "No spot found")
-                return loc;
-
-            return "Ingen plats hittades";
+            return null;
         }
 
-        private string CheckSpotValidity(List<PalletSpot> spots, int palletId)
-        {
-            foreach (var spot in spots)
-            {
-                if (spot.CurrentPallet != null)
-                    continue;
-
-                if (spot.Location[^1] == '1')
-                    continue;
-
-                if (_db.Pallets.Any(p => p.Location == spot.Location && p.Id != palletId))
-                    continue;
-
-                return spot.Location;
-            }
-
-            return "No spot found";
-        }
     }
 }

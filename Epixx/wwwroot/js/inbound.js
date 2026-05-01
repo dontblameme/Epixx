@@ -26,7 +26,7 @@
             const input = group.querySelector(".pallet-barcode-input");
             if (input.value != "") {
                 selectedPallets.set(parseInt(input.value), {
-                    location: 0,
+                    destination: 0,
                     height: 0,
                     weight: 0
                 });
@@ -126,9 +126,10 @@
             if (!barcode || selectedPallets.has(parseInt(barcode))) return;
 
             const result = await refreshSelectedList(barcode);
+            console.log(result.destination);
             if (result === null) return;
             selectedPallets.set(result.barcode, {
-                location: result.location,
+                destination: result.destination,
                 height: result.height,
                 weight: result.weight
             });
@@ -239,7 +240,7 @@
 
             const li = hiddenListItem.cloneNode(true);
             li.classList.remove("d-none");
-            li.textContent = data.location;
+            li.textContent = data.destination;
             palletListParent.appendChild(li);
         }
     

@@ -28,7 +28,8 @@ namespace Epixx.Models.Entities
         [ForeignKey("StoreId")]
         public int? DriverId { get; set; }
         [ForeignKey("DriverId")]
-
         public Driver? Driver { get; set; }      // Navigation property
+        [Timestamp]
+        public byte[] RowVersion { get; set; }
     }
 }

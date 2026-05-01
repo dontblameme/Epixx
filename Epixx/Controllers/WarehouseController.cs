@@ -26,7 +26,7 @@ namespace Epixx.Controllers
             var pallet = _driverservice.FetchSpecificPalletByBarcode(storedpalletbarcode);
             if(pallet == null)
                 return Json(null);
-            _palletservice.PlacePalletInWarehouse(pallet.Id,pallet.Location ,"Stored");
+            _palletservice.PlacePalletInWarehouse(pallet.Id,pallet.Destination, "Stored");
             _driverservice.RemovePalletFromDriver(pallet);
 
             var result = _driverservice.FetchAllPalletsFromDriverByStatus("AwaitingStorage");
@@ -37,7 +37,7 @@ namespace Epixx.Controllers
                 {
                     Barcode = p.Barcode,
                     Description = p.Description,
-                    Location = p.Location 
+                    Destination = p.Destination
                 });
             }
             return Json(palletDTOs);
@@ -53,7 +53,7 @@ namespace Epixx.Controllers
                 {
                     Barcode = pallet.Barcode,
                     Description = pallet.Description,
-                    Location = pallet.Location
+                    Destination = pallet.Destination
                 });
             }
             return View(palletDTOs);
@@ -61,7 +61,7 @@ namespace Epixx.Controllers
         [HttpGet]
         public void CancelMission()
         {
-            _driverservice.RemoveAllPalletsFromDriverByStatus("AwaitingStorage");
+            _driverservice.UnassignAllPalletsFromDriver();
         } 
         [HttpPost]
         public void RemovePalletFromQueueByBarcode([FromBody] string barcode)
@@ -71,18 +71,19 @@ namespace Epixx.Controllers
         [HttpPost]
         public IActionResult GetPalletsByBarcodes([FromBody] string barcode)
         {
-            int number;
-            if (!int.TryParse(barcode, out number))
+            long number;
+            if (!long.TryParse(barcode, out number))
                 return Json(null);
             if (barcode == null)
                 return Json(null);
             var pallet = _palletservice.FetchPalletByBarcode(barcode);
+            pallet = _palletservice.FindPalletSpotLocation(pallet);
             if (pallet == null)
                 return Json(null);
             PalletDTO palletDTO = new PalletDTO();
             palletDTO.Barcode = pallet.Barcode;
             palletDTO.Description = pallet.Description;
-            palletDTO.Location = pallet.Location;
+            palletDTO.Destination = pallet.Destination;
             palletDTO.Height = pallet.Height;
             palletDTO.Weight = pallet.Weight;
             _driverservice.AddPalletToDriver(pallet);
@@ -106,7 +107,7 @@ namespace Epixx.Controllers
                     driverpalletDTOs.Add(new DriverPalletDTO
                     {
                         Barcode = dp.Barcode,
-                        Location = dp.Location,
+                        Destination = dp.Destination,
                         Height = dp.Height,
                         Weight = dp.Weight
                     });
@@ -120,7 +121,7 @@ namespace Epixx.Controllers
                 {
                     Barcode = p.Barcode,
                     Description = p.Description,
-                    Location = p.Location,
+                    Destination = p.Location,
                     Height = p.Height,
                     Weight = p.Weight
                 });

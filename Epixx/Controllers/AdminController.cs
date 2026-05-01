@@ -6,6 +6,7 @@ using Epixx.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Epixx.Controllers
 {
@@ -17,7 +18,7 @@ namespace Epixx.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly PalletService _palletservice;
         private readonly AppDbContext _db;
-
+       
         public AdminController(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager, PalletService palletService, AppDbContext context)
         {
             _palletservice = palletService;
@@ -32,7 +33,46 @@ namespace Epixx.Controllers
             {
                 return View(model);
             }
+            var palletType = _palletservice.GetPalletTypeByDescription(model.Description);
+            for (int i = 0; i < model.AmountOfPallets; i++)
+            {
+                var pallet = new Pallet
+                {
+                   Description = palletType.Description,
+                   Width = palletType.Width,
+                   Height = (int)palletType.Height,
+                   Weight = (int)palletType.Weight,
+                   Amount = (int)palletType.Amount,
+                   Category = palletType.Category,
+                   Barcode = _palletservice.GenerateUniqueBarcodeForPallet(),
+                   Status = "AwaitingStorage"
+                };
+                _palletservice.AddPallet(pallet);
+            }
             return RedirectToAction("Index");
+        }
+        public IActionResult CreatePalletTransferRequests()
+        {
+            List<PalletCountDTO> palletCountDTOS = new();
+            var result = _db.Pallets
+            .Where(p => p.Status == "Stored")
+            .GroupBy(p => p.Description)
+            .Select(g => new
+            {
+                Description = g.Key,
+                Count = g.Count()
+            })
+            .OrderByDescending(x => x.Count)
+            .ToList();
+            for(int i = 0; i < result.Count; i++)
+            {
+                palletCountDTOS.Add(new PalletCountDTO
+                {
+                    Description = result[i].Description,
+                    Count = result[i].Count
+                });
+            }
+            return View(palletCountDTOS);
         }
         public IActionResult PalletsAwaitingStorage()
         {
@@ -42,15 +82,31 @@ namespace Epixx.Controllers
         [HttpPost]
         public async Task<IActionResult> PalletTypeCreation(PalletType model)
         {
-            if(_db.PalletTypes.Any(p => p.Description == model.Description))
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var description = model.Description?.Trim();
+
+            if (await _db.PalletTypes
+                .AnyAsync(p => p.Description == description))
             {
                 ModelState.AddModelError("Description", "Denna palltyp finns redan");
-            }
-            if (!ModelState.IsValid)
-            {
                 return View(model);
             }
-            _palletservice.CreateNewPalletType(model);
+
+            model.Description = description;
+
+            try
+            {
+                _palletservice.CreateNewPalletType(model);
+            }
+            catch (DbUpdateException)
+            {
+                // Fångar race condition (2 användare samtidigt)
+                ModelState.AddModelError("Description", "Denna palltyp finns redan");
+                return View(model);
+            }
+
             return RedirectToAction("Index");
         }
         public async Task<IActionResult> PalletTypeCreation()
@@ -88,7 +144,6 @@ namespace Epixx.Controllers
             return View();
         }
 
-        // --- Create new user (POST) ---
         [HttpPost]
         public async Task<IActionResult> CreateUser(string username, string password, string role)
         {

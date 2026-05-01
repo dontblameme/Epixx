@@ -145,9 +145,10 @@ namespace Epixx.Controllers
         [HttpGet]
         public IActionResult PalletTransfer()
         {
+            //Checks wether driver already has pallets assigned, if they do then use those, if not then fetch new pallets for transfer
             var pallets = _driverservice.FetchAllPalletsFromDriver();
             if (!pallets.Any())
-                pallets = _palletservice.GetPalletsForTransfer();
+                pallets = _palletservice.ClaimPalletsForTransfer();
 
             var palletDTOs = new List<PalletTransferDTO>();
             palletDTOs = _palletservice.AssignDestinationsToPallets(pallets);
@@ -183,16 +184,15 @@ namespace Epixx.Controllers
             }
             else
             {
-                int id = _storeservice.GetStoreId();
-                var packingAreaTransferPalletCount = _storeservice.GetPalletsByStoreId(id).Count;
-                if(_palletservice.GetPalletTransferCount() > 0 && packingAreaTransferPalletCount > 0)
+               
+                if(_palletservice.GetPalletCountByStatus("PalletTransfer") > 0 && _palletservice.GetPalletCountByStatus("PackingAreaTransfer") > 0)
                 {
                     if (choosePalletTransfer)
                         return RedirectToAction("PalletTransfer", "Auto");
                     else
                         return RedirectToAction("PackingAreaTransfer", "Auto");
                 }
-                else if(_palletservice.GetPalletTransferCount() > 0)
+                else if(_palletservice.GetPalletCountByStatus("PalletTransfer") > 0)
                 {
                     return RedirectToAction("PalletTransfer", "Auto");
                 }
@@ -220,12 +220,7 @@ namespace Epixx.Controllers
             }
             else
             {
-                id = _storeservice.GetStoreId();
-                pallets = _storeservice.GetPalletsByStoreId(id);
-                foreach (var pallet in pallets)
-                {
-                    _driverservice.AddPalletToDriver(pallet);
-                }
+                pallets = _storeservice.GetPalletsByStoreId();
             }           
             var store = _storeservice.GetStoreByStoreId(id);
             var packingareaname = _storeservice.GetPackingAreaNameByStoreId(id);
