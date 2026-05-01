@@ -1,8 +1,6 @@
 
-# 📦 Pallet Warehouse Management System
-
-Ett backend-projekt byggt i **.NET** för att simulera och hantera lagerflöden med pallar.
-Fokus ligger på robust affärslogik, samtidighet (concurrency) och tydliga state transitions.
+# 📦 Pallet Warehouse Management System (Epixx)
+Jag ville bygga en applikation som simulerar att lager likt det jag arbetar på just nu. 
 
 ## 🚀 Highlights
 
